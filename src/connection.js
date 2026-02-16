@@ -3,19 +3,31 @@ const pino = require("pino");
 const { Boom } = require("@hapi/boom");
 const fs = require("fs");
 const path = require("path");
-const qrcode = require("qrcode-terminal"); // Wajib install: npm i qrcode-terminal
+const qrcode = require("qrcode-terminal");
 const { logger, logConnection, logErrorBox } = require("./lib/colors");
 
-// -- IMPORTS YANG LEBIH AMAN --
+// -- IMPORTS & DEFINITIONS --
 const makeWASocket = Baileys.default;
 const {
     useMultiFileAuthState,
     DisconnectReason,
     fetchLatestBaileysVersion,
     jidDecode,
-    makeInMemoryStore,
-    delay // Tambahkan delay untuk mencegah spam reconnect
+    delay
 } = Baileys;
+
+// Coba ambil makeInMemoryStore dari berbagai sumber export
+const makeInMemoryStore = Baileys.makeInMemoryStore || Baileys.default?.makeInMemoryStore || Baileys.default?.default?.makeInMemoryStore;
+
+// -- SETUP RETRY CACHE (SOLUSI BAD MAC) --
+// Cache sederhana untuk menangani retry pesan yang gagal didekripsi
+const retryMap = new Map();
+const msgRetryCounterCache = {
+    get: (key) => retryMap.get(key),
+    set: (key, value) => retryMap.set(key, value),
+    del: (key) => retryMap.delete(key),
+    flushAll: () => retryMap.clear()
+};
 
 // -- SETUP STORE (SAFE MODE) --
 let store = null;
@@ -25,10 +37,11 @@ try {
             logger: pino().child({ level: "silent", stream: "store" }) 
         });
     } else {
-        logger.warn("System", "makeInMemoryStore is not a function. Running without store.");
+        // Silent warning agar log tidak penuh
+        // logger.warn("System", "Store inactive (Function not found)");
     }
 } catch (e) {
-    logger.warn("System", "Failed to initialize store. Running without store.");
+    // logger.warn("System", "Store failed to init");
 }
 
 /**
@@ -50,11 +63,13 @@ async function startConnection(callbacks = {}) {
     const sock = makeWASocket({
         version,
         logger: pino({ level: "silent" }),
-        printQRInTerminal: false, // Kita handle manual agar muncul di Heroku
+        printQRInTerminal: false,
         auth: state,
         browser: ["Ourin-AI", "Ubuntu", "3.0.0"],
         generateHighQualityLinkPreview: true,
-        // Fungsi getMessage dimodifikasi agar tidak error jika store mati
+        msgRetryCounterCache, // PENTING: Untuk fix Bad MAC / Decryption Fail
+        defaultQueryTimeoutMs: undefined, // Mencegah timeout query prematur
+        keepAliveIntervalMs: 30000, // Keep alive interval
         getMessage: async (key) => {
             if (store) {
                 try {
@@ -81,40 +96,38 @@ async function startConnection(callbacks = {}) {
         if (qr) {
             console.log("\n");
             logger.info("Connection", "Please scan the QR Code below:");
-            qrcode.generate(qr, { small: true }); // Tampilkan QR di terminal
+            qrcode.generate(qr, { small: true });
         }
 
         if (onConnectionUpdate) await onConnectionUpdate(update, sock);
 
         if (connection === "close") {
-            // Analisa alasan putus koneksi
             let reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
-            
-            // Cek jika errornya adalah konflik (biasanya string 'Stream Errored (conflict)')
-            if (lastDisconnect?.error?.message?.includes('conflict')) {
+            const errorMsg = lastDisconnect?.error?.message || "";
+
+            // Deteksi konflik sesi
+            if (errorMsg.includes('conflict')) {
                 reason = DisconnectReason.connectionReplaced;
             }
 
-            logConnection("disconnected", `Reason: ${lastDisconnect?.error?.message || reason}`);
+            // Filter log agar tidak terlalu panik
+            if (reason !== DisconnectReason.loggedOut) {
+                logger.info("Connection", `Disconnected (${reason}). Reconnecting...`);
+            } else {
+                logConnection("disconnected", `Reason: ${reason}`);
+            }
             
-            // Logika Reconnect yang Lebih Aman
+            // Logika Reconnect
             if (reason === DisconnectReason.loggedOut) {
                 logErrorBox("Connection", "Device Logged Out. Please delete session folder and scan again.");
-                // Jangan reconnect otomatis jika logout
             } else if (reason === DisconnectReason.connectionReplaced) {
-                // Jika konflik, tunggu lebih lama (5 detik) agar sesi lama mati dulu
-                logger.warn("Connection", "Connection Replaced (Conflict). Waiting 5s before reconnecting...");
+                logger.warn("Connection", "Session Conflict. Waiting 5s...");
                 await delay(5000); 
                 startConnection(callbacks);
             } else if (reason === DisconnectReason.restartRequired) {
-                logger.info("Connection", "Restart Required. Restarting...");
-                startConnection(callbacks);
-            } else if (reason === DisconnectReason.timedOut) {
-                logger.info("Connection", "Timed Out. Reconnecting...");
                 startConnection(callbacks);
             } else {
-                // Untuk error lain (Stream Errored, dll), beri jeda 3 detik biar gak spam
-                logger.info("Connection", "Reconnecting in 3s...");
+                // Jeda sedikit untuk error umum
                 await delay(3000);
                 startConnection(callbacks);
             }
@@ -123,7 +136,7 @@ async function startConnection(callbacks = {}) {
         }
     });
 
-    // Menyimpan kredensial saat ada perubahan (untuk login)
+    // Menyimpan kredensial saat ada perubahan
     sock.ev.on("creds.update", saveCreds);
 
     // Handler Pesan Masuk
@@ -134,21 +147,21 @@ async function startConnection(callbacks = {}) {
             if (onRawMessage) await onRawMessage(m, sock);
             if (onMessage) await onMessage(m, sock);
         } catch (err) {
-            // Ignore trivial errors
+            // Ignore
         }
     });
 
-    // Handler Update Pesan (Edit/Delete)
+    // Handler Update Pesan
     sock.ev.on("messages.update", async (updates) => {
         if (onMessageUpdate) await onMessageUpdate(updates, sock);
     });
 
-    // Handler Update Grup (Welcome/Left)
+    // Handler Group Participants
     sock.ev.on("group-participants.update", async (update) => {
         if (onGroupUpdate) await onGroupUpdate(update, sock);
     });
 
-    // Handler Update Pengaturan Grup (Mute/Open/Close)
+    // Handler Group Settings
     sock.ev.on("groups.update", async (update) => {
         if (onGroupSettingsUpdate) await onGroupSettingsUpdate(update, sock);
     });
