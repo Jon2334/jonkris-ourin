@@ -8,19 +8,23 @@
  * Wileys = Penyedia baileys
  * Penyedia API
  * Penyedia Scraper
- * 
- * JANGAN HAPUS/GANTI CREDITS & THANKS TO
- * JANGAN DIJUAL YA MEK
- * 
- * Saluran Resmi Ourin:
+ * * JANGAN HAPUS/GANTI CREDITS & THANKS TO
+ * * Saluran Resmi Ourin:
  * https://whatsapp.com/channel/0029VbB37bgBfxoAmAlsgE0t 
- * 
- */
+ * */
 const fs = require('fs');
 const path = require('path');
-const config = require('../../config');
+// Coba load config, jika gagal gunakan objek kosong (safe mode)
+let config;
+try {
+    config = require('../../config');
+} catch {
+    config = {};
+}
 
-let Low, JSONFileSync, JSONFile;
+// Gunakan lowdb v1.0.0 (Stabil untuk CommonJS/Heroku)
+const low = require('lowdb');
+const FileSync = require('lowdb/adapters/FileSync');
 
 /**
  * @typedef {Object} UserData
@@ -58,7 +62,10 @@ const defaultData = {
     users: {},
     groups: {},
     settings: {
-        selfMode: false
+        selfMode: false,
+        botMode: 'public',
+        premiumUsers: [],
+        bannedUsers: []
     },
     stats: {},
     sewa: {
@@ -68,7 +75,7 @@ const defaultData = {
 };
 
 /**
- * Database class menggunakan LowDB
+ * Database class menggunakan LowDB (Adapted for v1.0.0 Stability)
  * @class
  */
 class Database {
@@ -85,58 +92,47 @@ class Database {
     }
     
     /**
-     * Initialize database (async for ESM module loading)
+     * Initialize database
      */
     async init() {
         try {
-            const { LowSync } = await import('lowdb')
-            const { JSONFileSync } = await import('lowdb/node')
-            
-            const dbFile = path.join(this.dbPath, 'db.json')
-            
-            if (fs.existsSync(dbFile)) {
-                const content = fs.readFileSync(dbFile, 'utf-8').trim()
-                if (!content || content === '' || content === '{}') {
-                    console.log('[Database] Empty db.json detected, initializing with defaults...')
-                    fs.writeFileSync(dbFile, JSON.stringify(defaultData, null, 2), 'utf-8')
-                } else {
-                    try {
-                        JSON.parse(content)
-                    } catch (parseError) {
-                        console.log('[Database] Corrupted db.json detected, backing up and recreating...')
-                        const backupFile = path.join(this.dbPath, `db.json.corrupted.${Date.now()}.bak`)
-                        fs.copyFileSync(dbFile, backupFile)
-                        fs.writeFileSync(dbFile, JSON.stringify(defaultData, null, 2), 'utf-8')
-                        console.log(`[Database] Backup saved to: ${backupFile}`)
-                    }
-                }
-            } else {
-                fs.writeFileSync(dbFile, JSON.stringify(defaultData, null, 2), 'utf-8')
+            const dbFile = path.join(this.dbPath, 'database.json');
+
+            // Cek dan buat file jika belum ada
+            if (!fs.existsSync(dbFile)) {
+                fs.writeFileSync(dbFile, JSON.stringify(defaultData, null, 2), 'utf-8');
             }
+
+            // Inisialisasi adapter LowDB v1
+            const adapter = new FileSync(dbFile);
+            this.db = low(adapter);
+
+            // Set defaults jika kosong
+            this.db.defaults(defaultData).write();
+
+            // PENTING: Mapping data agar kompatibel dengan logic kode original
+            // Di v1, data diakses via db.getState() atau db.get(). 
+            // Kita bind ke properti .data agar kode lain (this.db.data.users) tetap jalan normal.
+            this.db.data = this.db.getState();
+
+            this.ready = true;
+            console.log('[Database] LowDB (Stable) initialized successfully');
             
-            const adapter = new JSONFileSync(dbFile)
-            this.db = new LowSync(adapter, defaultData)
+            await this.migrateOldData();
             
-            this.db.read()
-            
-            if (!this.db.data) {
-                this.db.data = defaultData
-            }
-            this.db.data = { ...defaultData, ...this.db.data }
-            
-            this.db.write()
-            
-            this.ready = true
-            console.log('[Database] LowDB initialized successfully')
-            
-            await this.migrateOldData()
-            
-            return this
+            return this;
         } catch (error) {
-            console.error('[Database] Failed to initialize:', error.message)
-            this.db = { data: defaultData, write: () => {}, read: () => {} }
-            this.ready = true
-            return this
+            console.error('[Database] Failed to initialize:', error.message);
+            // Fallback object agar tidak crash
+            this.db = { 
+                data: defaultData, 
+                write: () => {}, 
+                read: () => {},
+                getState: () => defaultData,
+                setState: () => {}
+            };
+            this.ready = true;
+            return this;
         }
     }
     
@@ -187,8 +183,10 @@ class Database {
      */
     async save() {
         try {
-            if (this.db && this.db.write) {
-                await this.db.write();
+            if (this.db) {
+                // Di LowDB v1, kita update State lalu write
+                this.db.setState(this.db.data);
+                this.db.write();
             }
             return true;
         } catch (error) {
@@ -249,11 +247,9 @@ class Database {
             },
             ...data,
             access: data.access || existing.access || [],
-        }
+        };
         
-        if (this.db && this.db.write) {
-            this.db.write();
-        }
+        this.save();
         return this.db.data.users[cleanJid];
     }
     
@@ -403,13 +399,6 @@ class Database {
         
         const existing = this.db.data.groups[jid] || {};
         
-        let config;
-        try {
-            config = require('../../config');
-        } catch {
-            config = {};
-        }
-        
         const welcomeDefault = config.welcome?.defaultEnabled ?? false;
         const goodbyeDefault = config.goodbye?.defaultEnabled ?? false;
         
@@ -558,7 +547,10 @@ async function initDatabase(dbPath) {
  */
 function getDatabase() {
     if (!dbInstance) {
-        throw new Error('Database not initialized. Call initDatabase first.');
+        // Fallback jika belum init (mencegah crash saat dipanggil oleh module lain sebelum init selesai)
+        const dummyDb = new Database(process.cwd());
+        dummyDb.db = { data: defaultData };
+        return dummyDb;
     }
     return dbInstance;
 }

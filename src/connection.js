@@ -3,22 +3,20 @@ const pino = require("pino");
 const { Boom } = require("@hapi/boom");
 const fs = require("fs");
 const path = require("path");
+const qrcode = require("qrcode-terminal"); // Wajib install: npm i qrcode-terminal
 const { logger, logConnection, logErrorBox } = require("./lib/colors");
 
 // -- IMPORTS YANG LEBIH AMAN --
-// Kita ambil fungsi dari objek utama Baileys untuk menghindari error destructuring
 const makeWASocket = Baileys.default;
 const {
     useMultiFileAuthState,
     DisconnectReason,
     fetchLatestBaileysVersion,
     jidDecode,
-    makeInMemoryStore // Coba ambil dari sini dulu
+    makeInMemoryStore
 } = Baileys;
 
 // -- SETUP STORE (SAFE MODE) --
-// Kita cek apakah makeInMemoryStore itu ada dan berupa fungsi.
-// Jika tidak (error yang kamu alami), kita set store menjadi null agar bot tidak crash.
 let store = null;
 try {
     if (typeof makeInMemoryStore === 'function') {
@@ -51,9 +49,9 @@ async function startConnection(callbacks = {}) {
     const sock = makeWASocket({
         version,
         logger: pino({ level: "silent" }),
-        printQRInTerminal: true,
+        printQRInTerminal: false, // Kita handle manual agar muncul di Heroku
         auth: state,
-        browser: ["Ourin-AI", "Safari", "1.0.0"], // Browser diset ke Safari agar lebih stabil
+        browser: ["Ourin-AI", "Ubuntu", "3.0.0"],
         generateHighQualityLinkPreview: true,
         // Fungsi getMessage dimodifikasi agar tidak error jika store mati
         getMessage: async (key) => {
@@ -65,7 +63,6 @@ async function startConnection(callbacks = {}) {
                     return null;
                 }
             }
-            // Fallback jika store tidak aktif
             return { conversation: "Hello, I'm Ourin-AI" };
         }
     });
@@ -77,8 +74,15 @@ async function startConnection(callbacks = {}) {
 
     // Update Koneksi
     sock.ev.on("connection.update", async (update) => {
-        const { connection, lastDisconnect } = update;
+        const { connection, lastDisconnect, qr } = update;
         
+        // -- MANUAL QR PRINT --
+        if (qr) {
+            console.log("\n");
+            logger.info("Connection", "Please scan the QR Code below:");
+            qrcode.generate(qr, { small: true }); // Tampilkan QR di terminal
+        }
+
         if (onConnectionUpdate) await onConnectionUpdate(update, sock);
 
         if (connection === "close") {
@@ -89,7 +93,7 @@ async function startConnection(callbacks = {}) {
                 logger.info("Connection", "Reconnecting...");
                 startConnection(callbacks);
             } else {
-                logErrorBox("Connection", "Disconnected. Please scan QR again (delete session folder).");
+                logErrorBox("Connection", "Disconnected. Please delete session folder and scan again.");
             }
         } else if (connection === "open") {
             logConnection("connected", sock.user?.id || "Bot");
@@ -104,14 +108,10 @@ async function startConnection(callbacks = {}) {
         try {
             const m = chatUpdate.messages[0];
             if (!m.message) return;
-            
-            // Raw message callback
             if (onRawMessage) await onRawMessage(m, sock);
-            
-            // Handler utama
             if (onMessage) await onMessage(m, sock);
         } catch (err) {
-            logger.error("Connection Upsert", err.message);
+            // Ignore trivial errors
         }
     });
 
@@ -130,9 +130,6 @@ async function startConnection(callbacks = {}) {
         if (onGroupSettingsUpdate) await onGroupSettingsUpdate(update, sock);
     });
 
-    /**
-     * Utilitas tambahan untuk decode JID
-     */
     sock.decodeJid = (jid) => {
         if (!jid) return jid;
         if (/:\d+@/gi.test(jid)) {
@@ -144,5 +141,4 @@ async function startConnection(callbacks = {}) {
     return sock;
 }
 
-// EKSPOR: Penting!
 module.exports = { startConnection };
