@@ -5,16 +5,40 @@ const { Boom } = require('@hapi/boom')
 const fs = require('fs')
 const path = require('path')
 
-// Load Helper Functions
-// Gunakan path.join untuk keamanan di berbagai OS
-const libPath = path.join(__dirname, 'lib')
-const { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = require(path.join(libPath, 'functions'))
-const { color } = require(path.join(libPath, 'colors'))
+// --- LOAD LIBRARY (DENGAN PATH YANG BENAR) ---
+const srcLibPath = path.join(__dirname, 'lib')
+const rootLibPath = path.join(__dirname, '../lib')
+
+let functions;
+try {
+    functions = require(path.join(srcLibPath, 'functions'))
+} catch (e) {
+    functions = {} 
+}
+
+let simple;
+try {
+    simple = require(path.join(rootLibPath, 'simple'))
+} catch (e) {
+    simple = {}
+}
+
+let color;
+try {
+    const colorLib = require(path.join(srcLibPath, 'colors'))
+    color = colorLib.color
+} catch (e) {
+    color = (text) => text 
+}
+
+const smsg = simple.smsg || functions.smsg
+const { isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = functions
+// ---------------------------------------------
 
 const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) })
 
-async function startOurin() {
-    // Session path di root folder
+// PERBAIKAN: Ubah nama fungsi jadi startConnection agar sesuai dengan index.js
+async function startConnection() {
     const sessionPath = path.join(__dirname, '../session')
     
     if (!fs.existsSync(sessionPath)) {
@@ -51,13 +75,17 @@ async function startOurin() {
             if (mek.key && mek.key.remoteJid === 'status@broadcast') return
             if (!ourin.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
             if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
-            m = smsg(ourin, mek, store)
             
-            // Path ke case handler: ../case/ourin.js
+            if (smsg) {
+                m = smsg(ourin, mek, store)
+            } else {
+                m = mek
+            }
+
             const casePath = path.join(__dirname, '../case/ourin')
             require(casePath)(ourin, m, chatUpdate, store)
         } catch (err) {
-            console.log(err)
+            console.log("Error in upsert:", err)
         }
     })
 
@@ -66,13 +94,13 @@ async function startOurin() {
         if (connection === 'close') {
             let reason = new Boom(lastDisconnect?.error)?.output.statusCode
             if (reason === DisconnectReason.badSession) { console.log(`Bad Session File, Please Delete Session and Scan Again`); process.exit(); }
-            else if (reason === DisconnectReason.connectionClosed) { console.log("Connection closed, reconnecting...."); startOurin(); }
-            else if (reason === DisconnectReason.connectionLost) { console.log("Connection Lost from Server, reconnecting..."); startOurin(); }
+            else if (reason === DisconnectReason.connectionClosed) { console.log("Connection closed, reconnecting...."); startConnection(); }
+            else if (reason === DisconnectReason.connectionLost) { console.log("Connection Lost from Server, reconnecting..."); startConnection(); }
             else if (reason === DisconnectReason.connectionReplaced) { console.log("Connection Replaced, Another New Session Opened, Please Close Current Session First"); process.exit(); }
             else if (reason === DisconnectReason.loggedOut) { console.log(`Device Logged Out, Please Delete Session and Scan Again.`); process.exit(); }
-            else if (reason === DisconnectReason.restartRequired) { console.log("Restart Required, Restarting..."); startOurin(); }
-            else if (reason === DisconnectReason.timedOut) { console.log("Connection TimedOut, Reconnecting..."); startOurin(); }
-            else { console.log(`Unknown DisconnectReason: ${reason}|${connection}`); startOurin(); }
+            else if (reason === DisconnectReason.restartRequired) { console.log("Restart Required, Restarting..."); startConnection(); }
+            else if (reason === DisconnectReason.timedOut) { console.log("Connection TimedOut, Reconnecting..."); startConnection(); }
+            else { console.log(`Unknown DisconnectReason: ${reason}|${connection}`); startConnection(); }
         } else if (connection === 'open') {
             console.log('Bot Connected to WhatsApp!')
         }
@@ -82,6 +110,5 @@ async function startOurin() {
     return ourin
 }
 
-startOurin()
-
-module.exports = startOurin
+// PERBAIKAN: Export dengan nama yang konsisten
+module.exports = startConnection
