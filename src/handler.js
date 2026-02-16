@@ -1,5 +1,5 @@
 
-
+const { getUptime } = require('./lib/functions');
 const config = require("../config");
 const { isSelf } = require("../config");
 const { serialize } = require("./lib/serialize");

@@ -8,27 +8,48 @@
  * Wileys = Penyedia baileys
  * Penyedia API
  * Penyedia Scraper
- * 
- * JANGAN HAPUS/GANTI CREDITS & THANKS TO
- * JANGAN DIJUAL YA MEK
- * 
+ * * JANGAN HAPUS/GANTI CREDITS & THANKS TO
  * Saluran Resmi Ourin:
  * https://whatsapp.com/channel/0029VbB37bgBfxoAmAlsgE0t 
- * 
  */
+
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const crypto = require('crypto');
 
+// --- FUNGSI TAMBAHAN (FIX ERROR) ---
+
+/**
+ * Menghitung durasi uptime dalam format human-readable
+ * (Fix untuk error: getUptime is not a function)
+ * @param {number} seconds - Waktu dalam detik
+ */
+function getUptime(seconds) {
+    seconds = Number(seconds);
+    var d = Math.floor(seconds / (3600 * 24));
+    var h = Math.floor(seconds % (3600 * 24) / 3600);
+    var m = Math.floor(seconds % 3600 / 60);
+    var s = Math.floor(seconds % 60);
+    
+    var dDisplay = d > 0 ? d + (d == 1 ? " day, " : " days, ") : "";
+    var hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " hours, ") : "";
+    var mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " minutes, ") : "";
+    var sDisplay = s > 0 ? s + (s == 1 ? " second" : " seconds") : "";
+    return dDisplay + hDisplay + mDisplay + sDisplay;
+}
+
+/**
+ * Alias untuk delay (karena beberapa handler pakai nama sleep)
+ */
+const sleep = async (ms) => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+// --- FUNGSI BAWAAN ---
+
 /**
  * Generate random string dengan panjang tertentu
- * @param {number} length - Panjang string yang diinginkan
- * @param {string} [charset='alphanumeric'] - Tipe karakter ('alphanumeric', 'numeric', 'alpha', 'hex')
- * @returns {string} Random string
- * @example
- * randomString(8); // "aB3dE7fG"
- * randomString(6, 'numeric'); // "472839"
  */
 function randomString(length, charset = 'alphanumeric') {
     const charsets = {
@@ -48,49 +69,19 @@ function randomString(length, charset = 'alphanumeric') {
     return result;
 }
 
-/**
- * Generate random integer antara min dan max (inclusive)
- * @param {number} min - Nilai minimum
- * @param {number} max - Nilai maximum
- * @returns {number} Random integer
- * @example
- * randomInt(1, 10); // 7
- */
 function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-/**
- * Pilih item random dari array
- * @param {Array} array - Array untuk dipilih
- * @returns {*} Item random dari array
- * @example
- * randomPick(['a', 'b', 'c']); // 'b'
- */
 function randomPick(array) {
     if (!Array.isArray(array) || array.length === 0) return null;
     return array[Math.floor(Math.random() * array.length)];
 }
 
-/**
- * Delay eksekusi untuk durasi tertentu
- * @param {number} ms - Durasi delay dalam milliseconds
- * @returns {Promise<void>} Promise yang resolve setelah delay
- * @example
- * await delay(1000); // tunggu 1 detik
- */
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/**
- * Cek apakah string adalah URL valid
- * @param {string} str - String untuk dicek
- * @returns {boolean} True jika URL valid
- * @example
- * isUrl('https://google.com'); // true
- * isUrl('not a url'); // false
- */
 function isUrl(str) {
     try {
         new URL(str);
@@ -100,33 +91,14 @@ function isUrl(str) {
     }
 }
 
-/**
- * Cek apakah string adalah nomor telepon valid
- * @param {string} str - String untuk dicek
- * @returns {boolean} True jika nomor telepon valid
- * @example
- * isPhoneNumber('6281234567890'); // true
- */
 function isPhoneNumber(str) {
     return /^[0-9]{10,15}$/.test(str.replace(/[^0-9]/g, ''));
 }
 
-/**
- * Cek apakah string adalah email valid
- * @param {string} str - String untuk dicek
- * @returns {boolean} True jika email valid
- */
 function isEmail(str) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
 }
 
-/**
- * Parse mention dari text
- * @param {string} text - Text yang berisi mention
- * @returns {string[]} Array nomor yang di-mention
- * @example
- * parseMention('@6281234567890 hello'); // ['6281234567890']
- */
 function parseMention(text) {
     if (!text) return [];
     const matches = text.match(/@([0-9]+)/g);
@@ -134,30 +106,14 @@ function parseMention(text) {
     return matches.map(m => m.replace('@', ''));
 }
 
-/**
- * Escape karakter khusus regex
- * @param {string} str - String untuk di-escape
- * @returns {string} Escaped string
- */
 function escapeRegex(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/**
- * Deep clone object
- * @param {Object} obj - Object untuk di-clone
- * @returns {Object} Cloned object
- */
 function deepClone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
-/**
- * Merge deep objects
- * @param {Object} target - Target object
- * @param {Object} source - Source object
- * @returns {Object} Merged object
- */
 function deepMerge(target, source) {
     const result = { ...target };
     
@@ -172,18 +128,13 @@ function deepMerge(target, source) {
     return result;
 }
 
-/**
- * Fetch buffer dari URL
- * @param {string} url - URL untuk fetch
- * @param {Object} [options={}] - Axios options
- * @returns {Promise<Buffer>} Buffer dari response
- * @example
- * const buffer = await fetchBuffer('https://example.com/image.png');
- */
 async function fetchBuffer(url, options = {}) {
     try {
         const response = await axios.get(url, {
             responseType: 'arraybuffer',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36'
+            },
             ...options
         });
         return Buffer.from(response.data);
@@ -192,18 +143,16 @@ async function fetchBuffer(url, options = {}) {
     }
 }
 
-/**
- * Fetch JSON dari URL
- * @param {string} url - URL untuk fetch
- * @param {Object} [options={}] - Axios options
- * @returns {Promise<Object>} JSON response
- * @example
- * const data = await fetchJson('https://api.example.com/data');
- */
+// Alias getBuffer ke fetchBuffer (kompatibilitas)
+const getBuffer = fetchBuffer;
+
 async function fetchJson(url, options = {}) {
     try {
         const response = await axios.get(url, {
             responseType: 'json',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36'
+            },
             ...options
         });
         return response.data;
@@ -212,12 +161,6 @@ async function fetchJson(url, options = {}) {
     }
 }
 
-/**
- * Fetch text dari URL
- * @param {string} url - URL untuk fetch
- * @param {Object} [options={}] - Axios options
- * @returns {Promise<string>} Text response
- */
 async function fetchText(url, options = {}) {
     try {
         const response = await axios.get(url, {
@@ -230,12 +173,6 @@ async function fetchText(url, options = {}) {
     }
 }
 
-/**
- * Download file dari URL dan simpan ke path
- * @param {string} url - URL file untuk download
- * @param {string} filePath - Path untuk menyimpan file
- * @returns {Promise<string>} Path file yang disimpan
- */
 async function downloadFile(url, filePath) {
     try {
         const buffer = await fetchBuffer(url);
@@ -252,47 +189,22 @@ async function downloadFile(url, filePath) {
     }
 }
 
-/**
- * Generate hash MD5 dari string
- * @param {string} str - String untuk di-hash
- * @returns {string} MD5 hash
- */
 function md5(str) {
     return crypto.createHash('md5').update(str).digest('hex');
 }
 
-/**
- * Generate hash SHA256 dari string
- * @param {string} str - String untuk di-hash
- * @returns {string} SHA256 hash
- */
 function sha256(str) {
     return crypto.createHash('sha256').update(str).digest('hex');
 }
 
-/**
- * Encode string ke Base64
- * @param {string} str - String untuk di-encode
- * @returns {string} Base64 encoded string
- */
 function toBase64(str) {
     return Buffer.from(str).toString('base64');
 }
 
-/**
- * Decode Base64 ke string
- * @param {string} str - Base64 string untuk di-decode
- * @returns {string} Decoded string
- */
 function fromBase64(str) {
     return Buffer.from(str, 'base64').toString('utf-8');
 }
 
-/**
- * Cek apakah path adalah file
- * @param {string} filePath - Path untuk dicek
- * @returns {boolean} True jika file exists dan adalah file
- */
 function isFile(filePath) {
     try {
         return fs.statSync(filePath).isFile();
@@ -301,11 +213,6 @@ function isFile(filePath) {
     }
 }
 
-/**
- * Cek apakah path adalah directory
- * @param {string} dirPath - Path untuk dicek
- * @returns {boolean} True jika path exists dan adalah directory
- */
 function isDirectory(dirPath) {
     try {
         return fs.statSync(dirPath).isDirectory();
@@ -314,11 +221,6 @@ function isDirectory(dirPath) {
     }
 }
 
-/**
- * Buat directory jika belum ada
- * @param {string} dirPath - Path directory
- * @returns {boolean} True jika berhasil
- */
 function ensureDir(dirPath) {
     if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
@@ -326,12 +228,6 @@ function ensureDir(dirPath) {
     return true;
 }
 
-/**
- * Baca file JSON dengan aman
- * @param {string} filePath - Path file JSON
- * @param {*} [defaultValue={}] - Default value jika file tidak ada
- * @returns {Object} Parsed JSON atau default value
- */
 function readJsonFile(filePath, defaultValue = {}) {
     try {
         if (!fs.existsSync(filePath)) return defaultValue;
@@ -342,13 +238,6 @@ function readJsonFile(filePath, defaultValue = {}) {
     }
 }
 
-/**
- * Tulis object ke file JSON
- * @param {string} filePath - Path file JSON
- * @param {Object} data - Data untuk ditulis
- * @param {boolean} [pretty=true] - Apakah format dengan indentasi
- * @returns {boolean} True jika berhasil
- */
 function writeJsonFile(filePath, data, pretty = true) {
     try {
         const dir = path.dirname(filePath);
@@ -364,11 +253,6 @@ function writeJsonFile(filePath, data, pretty = true) {
     }
 }
 
-/**
- * Dapatkan MIME type dari buffer
- * @param {Buffer} buffer - Buffer untuk dicek
- * @returns {string} MIME type
- */
 function getMimeType(buffer) {
     const signatures = {
         'ffd8ff': 'image/jpeg',
@@ -398,11 +282,6 @@ function getMimeType(buffer) {
     return 'application/octet-stream';
 }
 
-/**
- * Dapatkan ekstensi file dari MIME type
- * @param {string} mimeType - MIME type
- * @returns {string} File extension (tanpa dot)
- */
 function getExtension(mimeType) {
     const extensions = {
         'image/jpeg': 'jpg',
@@ -420,24 +299,11 @@ function getExtension(mimeType) {
     return extensions[mimeType] || 'bin';
 }
 
-/**
- * Sleep dengan random delay
- * @param {number} minMs - Minimum delay
- * @param {number} maxMs - Maximum delay
- * @returns {Promise<void>}
- */
 async function randomDelay(minMs, maxMs) {
     const ms = randomInt(minMs, maxMs);
     return delay(ms);
 }
 
-/**
- * Retry function dengan exponential backoff
- * @param {Function} fn - Function untuk di-retry
- * @param {number} [maxRetries=3] - Maksimum retry
- * @param {number} [baseDelay=1000] - Base delay dalam ms
- * @returns {Promise<*>} Result dari function
- */
 async function retry(fn, maxRetries = 3, baseDelay = 1000) {
     let lastError;
     
@@ -455,14 +321,6 @@ async function retry(fn, maxRetries = 3, baseDelay = 1000) {
     throw lastError;
 }
 
-/**
- * Chunk array menjadi array of arrays dengan size tertentu
- * @param {Array} array - Array untuk di-chunk
- * @param {number} size - Ukuran setiap chunk
- * @returns {Array<Array>} Array of chunks
- * @example
- * chunk([1,2,3,4,5], 2); // [[1,2], [3,4], [5]]
- */
 function chunk(array, size) {
     const result = [];
     for (let i = 0; i < array.length; i += size) {
@@ -471,31 +329,14 @@ function chunk(array, size) {
     return result;
 }
 
-/**
- * Flatten nested array
- * @param {Array} array - Nested array
- * @param {number} [depth=1] - Kedalaman flatten
- * @returns {Array} Flattened array
- */
 function flatten(array, depth = 1) {
     return array.flat(depth);
 }
 
-/**
- * Remove duplicate dari array
- * @param {Array} array - Array dengan kemungkinan duplicate
- * @returns {Array} Array tanpa duplicate
- */
 function unique(array) {
     return [...new Set(array)];
 }
 
-/**
- * Group array by key
- * @param {Array<Object>} array - Array of objects
- * @param {string} key - Key untuk grouping
- * @returns {Object} Grouped object
- */
 function groupBy(array, key) {
     return array.reduce((result, item) => {
         const groupKey = item[key];
@@ -507,13 +348,6 @@ function groupBy(array, key) {
     }, {});
 }
 
-/**
- * Sort array of objects by key
- * @param {Array<Object>} array - Array of objects
- * @param {string} key - Key untuk sorting
- * @param {string} [order='asc'] - Order: 'asc' atau 'desc'
- * @returns {Array<Object>} Sorted array
- */
 function sortBy(array, key, order = 'asc') {
     const multiplier = order === 'desc' ? -1 : 1;
     return [...array].sort((a, b) => {
@@ -523,7 +357,11 @@ function sortBy(array, key, order = 'asc') {
     });
 }
 
+// Pastikan getUptime ikut diekspor
 module.exports = {
+    getUptime,
+    sleep,
+    getBuffer,
     randomString,
     randomInt,
     randomPick,
