@@ -5,50 +5,16 @@ const { Boom } = require('@hapi/boom')
 const fs = require('fs')
 const path = require('path')
 
-// --- BAGIAN INI SANGAT PENTING (JANGAN DIUBAH) ---
-
-// 1. Tentukan path ke folder library
-const srcLibPath = path.join(__dirname, 'lib')      // Folder: /src/lib/
-const rootLibPath = path.join(__dirname, '../lib')  // Folder: /lib/ (di root)
-
-// 2. Load Functions dari 'src/lib/functions.js' (Pengganti myfunc)
-// Kita gunakan try-catch untuk debugging jika file tidak ditemukan
-let functions;
-try {
-    functions = require(path.join(srcLibPath, 'functions'))
-} catch (e) {
-    console.error("Gagal load src/lib/functions.js:", e)
-    functions = {} // Fallback object kosong agar tidak crash instan
-}
-
-// 3. Load Simple dari 'lib/simple.js' (Untuk fungsi smsg)
-let simple;
-try {
-    simple = require(path.join(rootLibPath, 'simple'))
-} catch (e) {
-    console.error("Gagal load lib/simple.js:", e)
-    simple = {}
-}
-
-// 4. Load Colors dari 'src/lib/colors.js'
-let color;
-try {
-    const colorLib = require(path.join(srcLibPath, 'colors'))
-    color = colorLib.color
-} catch (e) {
-    color = (text) => text // Fallback jika gagal load warna
-}
-
-// 5. Destructuring fungsi-fungsi penting
-// Kita ambil smsg dari simple.js, jika tidak ada ambil dari functions.js
-const smsg = simple.smsg || functions.smsg
-const { isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = functions
-// ----------------------------------------------------
+// Load Helper Functions
+// Gunakan path.join untuk keamanan di berbagai OS
+const libPath = path.join(__dirname, 'lib')
+const { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = require(path.join(libPath, 'functions'))
+const { color } = require(path.join(libPath, 'colors'))
 
 const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) })
 
 async function startOurin() {
-    // Path session diarahkan ke root folder agar rapi
+    // Session path di root folder
     const sessionPath = path.join(__dirname, '../session')
     
     if (!fs.existsSync(sessionPath)) {
@@ -85,19 +51,13 @@ async function startOurin() {
             if (mek.key && mek.key.remoteJid === 'status@broadcast') return
             if (!ourin.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
             if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
+            m = smsg(ourin, mek, store)
             
-            // Panggil smsg (pastikan fungsi ini ada)
-            if (smsg) {
-                m = smsg(ourin, mek, store)
-            } else {
-                m = mek // Fallback jika smsg gagal diload
-            }
-
-            // Path ke handler case/ourin.js
+            // Path ke case handler: ../case/ourin.js
             const casePath = path.join(__dirname, '../case/ourin')
             require(casePath)(ourin, m, chatUpdate, store)
         } catch (err) {
-            console.log("Error in upsert:", err)
+            console.log(err)
         }
     })
 

@@ -1,100 +1,21 @@
-/**
- * Credits & Thanks to
- * Developer = Lucky Archz ( Zann )
- * Lead owner = HyuuSATAN
- * Owner = Keisya
- * Owner = Syura Salsabila
- * Designer = Danzzz
- * Wileys = Penyedia baileys
- * Penyedia API
- * Penyedia Scraper
- * 
- * JANGAN HAPUS/GANTI CREDITS & THANKS TO
- * JANGAN DIJUAL YA MEK
- * 
- * Saluran Resmi Ourin:
- * https://whatsapp.com/channel/0029VbB37bgBfxoAmAlsgE0t 
- * 
- */
-
 const { 
     downloadContentFromMessage, 
     getContentType, 
-    jidDecode,
-    proto,
-    generateWAMessageFromContent,
-    generateWAMessage,
+    jidDecode, 
+    proto, 
+    generateWAMessageFromContent, 
+    generateWAMessage, 
     areJidsSameUser,
-    normalizeMessageContent  // FIX: Handle all 20+ message wrapper types
-} = require('ourin');
-const { writeFileSync, mkdirSync, existsSync, unlinkSync } = require('fs');
+    normalizeMessageContent 
+} = require('@whiskeysockets/baileys'); // PERBAIKAN: Ganti 'ourin' jadi '@whiskeysockets/baileys'
+
+const { writeFileSync, mkdirSync, existsSync, unlinkSync, readFileSync } = require('fs');
 const { join } = require('path');
 const config = require('../../config');
-const { isLid, isLidConverted, lidToJid, convertLidArray, decodeAndNormalize, resolveLidFromParticipants, resolveAnyLidToJid } = require('./lidHelper');
-const fs = require('node-webpmux/io');
-const fsc = require("fs");
+const { isLid, isLidConverted, lidToJid, convertLidArray, decodeAndNormalize, resolveLidFromParticipants, resolveAnyLidToJid, cacheParticipantLids } = require('./lidHelper');
+const fs = require('fs'); // Menggunakan fs bawaan node
 const sharp = require('sharp');
-
-/**
- * @typedef {Object} ContextInfo
- * @property {string} stanzaId - ID pesan yang di-quote
- * @property {string} participant - JID participant yang di-quote
- * @property {Object} quotedMessage - Pesan yang di-quote
- * @property {string[]} mentionedJid - Array JID yang di-mention
- * @property {boolean} isForwarded - Apakah pesan forwarded
- * @property {number} forwardingScore - Skor forwarding
- * @property {Object} externalAdReply - External ad reply (thumbnail)
- */
-
-/**
- * @typedef {Object} SerializedMessage
- * @property {string} id - ID unik pesan
- * @property {string} chat - JID chat/group
- * @property {string} sender - JID pengirim
- * @property {string} senderNumber - Nomor pengirim tanpa @s.whatsapp.net
- * @property {string} pushName - Nama display pengirim
- * @property {boolean} fromMe - Apakah pesan dari bot sendiri
- * @property {boolean} isGroup - Apakah pesan dari group
- * @property {boolean} isOwner - Apakah pengirim adalah owner
- * @property {boolean} isPremium - Apakah pengirim adalah premium user
- * @property {boolean} isBanned - Apakah pengirim dibanned
- * @property {boolean} isBot - Apakah pengirim adalah bot
- * @property {string} type - Tipe pesan
- * @property {string} body - Isi pesan text
- * @property {string} command - Command tanpa prefix
- * @property {string} prefix - Prefix yang digunakan
- * @property {string[]} args - Array argumen
- * @property {string} text - Text setelah command
- * @property {boolean} isCommand - Apakah pesan adalah command
- * @property {boolean} isMedia - Apakah ada media
- * @property {boolean} isImage - Apakah gambar
- * @property {boolean} isVideo - Apakah video
- * @property {boolean} isAudio - Apakah audio
- * @property {boolean} isSticker - Apakah sticker
- * @property {boolean} isDocument - Apakah dokumen
- * @property {boolean} isContact - Apakah kontak
- * @property {boolean} isLocation - Apakah lokasi
- * @property {boolean} isQuoted - Apakah ada pesan yang di-quote
- * @property {Object} quoted - Objek pesan yang di-quote
- * @property {string[]} mentionedJid - Array JID yang di-mention
- * @property {Object} groupMetadata - Metadata group (jika di group)
- * @property {boolean} isAdmin - Apakah pengirim admin group
- * @property {boolean} isBotAdmin - Apakah bot adalah admin
- * @property {Function} reply - Fungsi reply text
- * @property {Function} replyWithMentions - Fungsi reply dengan mentions
- * @property {Function} replyImage - Fungsi reply gambar
- * @property {Function} replyVideo - Fungsi reply video
- * @property {Function} replyAudio - Fungsi reply audio
- * @property {Function} replySticker - Fungsi reply sticker
- * @property {Function} replyDocument - Fungsi reply dokumen
- * @property {Function} replyContact - Fungsi reply kontak
- * @property {Function} replyLocation - Fungsi reply lokasi
- * @property {Function} replyWithQuote - Fungsi reply dengan fake quote
- * @property {Function} react - Fungsi react emoji
- * @property {Function} download - Fungsi download media
- * @property {Function} delete - Fungsi delete pesan
- * @property {Function} forward - Fungsi forward pesan
- */
+const axios = require('axios'); // Tambahkan axios karena dipakai di bawah
 
 /**
  * Decode JID menjadi format yang lebih bersih
@@ -193,7 +114,7 @@ function parseCommand(body, prefix) {
     try {
         const prefixDbPath = join(process.cwd(), 'database', 'prefix.json');
         if (existsSync(prefixDbPath)) {
-            const prefixData = JSON.parse(require('fs').readFileSync(prefixDbPath, 'utf8'));
+            const prefixData = JSON.parse(readFileSync(prefixDbPath, 'utf8'));
             prefixList = prefixData.prefixes || [];
         }
     } catch {}
@@ -250,7 +171,7 @@ function parseCommand(body, prefix) {
         try {
             const prefixDbPath = join(process.cwd(), 'database', 'prefix.json');
             if (existsSync(prefixDbPath)) {
-                const prefixData = JSON.parse(require('fs').readFileSync(prefixDbPath, 'utf8'));
+                const prefixData = JSON.parse(readFileSync(prefixDbPath, 'utf8'));
                 isNoPrefix = prefixData.noprefix === true;
             }
         } catch {}
@@ -392,7 +313,7 @@ function createContextInfo(jid, text, title = '', body = '', thumbnail = null) {
  * @param {Object} sock - Socket connection Baileys
  * @param {Object} msg - Raw message dari Baileys event
  * @param {Object} [store] - Store untuk simpan data
- * @returns {Promise<SerializedMessage>} Objek pesan yang sudah di-serialize
+ * @returns {Promise<Object>} Objek pesan yang sudah di-serialize
  */
 async function serialize(sock, msg, store = {}) {
     if (!msg) return null;
@@ -497,7 +418,6 @@ async function serialize(sock, msg, store = {}) {
                 return pNum === botNum || pNum.includes(botNum) || botNum.includes(pNum);
             });
             
-            const { cacheParticipantLids } = require('./lidHelper');
             cacheParticipantLids(m.groupMembers);
             
             if (isLid(m.sender) || isLidConverted(m.sender)) {
@@ -579,7 +499,6 @@ async function serialize(sock, msg, store = {}) {
             ...options.contextInfo
         };
         
-        const fs = require('fs');
         if (replyVariant === 2) {
             try {
                 const thumbnailPath = './assets/images/ourin2.jpg';
@@ -710,7 +629,6 @@ async function serialize(sock, msg, store = {}) {
             try {
                 const ppUrl = await sock.profilePictureUrl(m.sender, 'image').catch(() => null);
                 if (ppUrl) {
-                    const axios = require('axios');
                     const ppRes = await axios.get(ppUrl, { responseType: 'arraybuffer', timeout: 5000 });
                     jpegThumbnail = Buffer.from(ppRes.data);
                 }
@@ -794,7 +712,6 @@ async function serialize(sock, msg, store = {}) {
     m.replyImage = async (image, caption = '', options = {}) => {
         let buffer = image;
         if (typeof image === 'string' && image.startsWith('http')) {
-            const axios = require('axios');
             const response = await axios.get(image, { responseType: 'arraybuffer' });
             buffer = Buffer.from(response.data);
         }
@@ -819,7 +736,6 @@ async function serialize(sock, msg, store = {}) {
     m.replyVideo = async (video, caption = '', options = {}) => {
         let buffer = video;
         if (typeof video === 'string' && video.startsWith('http')) {
-            const axios = require('axios');
             const response = await axios.get(video, { responseType: 'arraybuffer' });
             buffer = Buffer.from(response.data);
         }
@@ -845,7 +761,6 @@ async function serialize(sock, msg, store = {}) {
     m.replyAudio = async (audio, ptt = false, options = {}) => {
         let buffer = audio;
         if (typeof audio === 'string' && audio.startsWith('http')) {
-            const axios = require('axios');
             const response = await axios.get(audio, { responseType: 'arraybuffer' });
             buffer = Buffer.from(response.data);
         }
@@ -868,7 +783,6 @@ async function serialize(sock, msg, store = {}) {
     m.replySticker = async (sticker, options = {}) => {
         let buffer = sticker;
         if (typeof sticker === 'string' && sticker.startsWith('http')) {
-            const axios = require('axios');
             const response = await axios.get(sticker, { responseType: 'arraybuffer' });
             buffer = Buffer.from(response.data);
         }
@@ -891,7 +805,6 @@ async function serialize(sock, msg, store = {}) {
     m.replyDocument = async (document, fileName, mimetype = 'application/octet-stream', options = {}) => {
         let buffer = document;
         if (typeof document === 'string' && document.startsWith('http')) {
-            const axios = require('axios');
             const response = await axios.get(document, { responseType: 'arraybuffer' });
             buffer = Buffer.from(response.data);
         }
