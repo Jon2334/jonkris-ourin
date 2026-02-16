@@ -63,18 +63,22 @@ async function startConnection(callbacks = {}) {
     // Cek apakah MONGODB_URI didefinisikan dan useMongoDBAuthState berhasil diimport
     if (process.env.MONGODB_URI) {
         try {
-            logger.info("Connection", "Using MongoDB Session");
+            logger.info("Database", "Connecting to MongoDB..."); // Ubah label jadi Database
             const auth = await useMongoDBAuthState('session-utama');
+            
+            // --- INDIKATOR SUKSES MONGODB ---
+            logger.success("Database", "Connected to MongoDB successfully! Session is persistent.");
+            
             state = auth.state;
             saveCreds = auth.saveCreds;
         } catch (error) {
-            logger.warn("Connection", `MongoDB Error: ${error.message}. Fallback to local session.`);
+            logger.warn("Database", `MongoDB Error: ${error.message}. Fallback to local session.`);
             const auth = await useMultiFileAuthState(sessionDir);
             state = auth.state;
             saveCreds = auth.saveCreds;
         }
     } else {
-        logger.info("Connection", "Using Local File Session");
+        logger.info("Database", "Using Local File Session (Not Persistent on Heroku)");
         const auth = await useMultiFileAuthState(sessionDir);
         state = auth.state;
         saveCreds = auth.saveCreds;
