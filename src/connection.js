@@ -4,13 +4,22 @@ const pino = require('pino')
 const { Boom } = require('@hapi/boom')
 const fs = require('fs')
 const path = require('path')
-const { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = require('../lib/myfunc')
-const { color } = require('../lib/color')
+
+// Gunakan path.join untuk memastikan path absolute yang benar di semua OS
+const libPath = path.join(__dirname, '../lib')
+const { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = require(path.join(libPath, 'myfunc'))
+const { color } = require(path.join(libPath, 'color'))
 
 const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) })
 
 async function startOurin() {
-    const { state, saveCreds } = await useMultiFileAuthState('session')
+    // Pastikan folder session ada
+    const sessionPath = path.join(__dirname, '../session')
+    if (!fs.existsSync(sessionPath)) {
+        fs.mkdirSync(sessionPath, { recursive: true })
+    }
+
+    const { state, saveCreds } = await useMultiFileAuthState(sessionPath)
     const { version, isLatest } = await fetchLatestBaileysVersion()
     console.log(`Using WA v${version.join('.')}, isLatest: ${isLatest}`)
 
@@ -41,7 +50,10 @@ async function startOurin() {
             if (!ourin.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
             if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
             m = smsg(ourin, mek, store)
-            require('../case/ourin')(ourin, m, chatUpdate, store)
+            
+            // Fix path require untuk case handler
+            const casePath = path.join(__dirname, '../case/ourin')
+            require(casePath)(ourin, m, chatUpdate, store)
         } catch (err) {
             console.log(err)
         }
