@@ -1,20 +1,36 @@
-const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    DisconnectReason,
-    fetchLatestBaileysVersion,
-    makeInMemoryStore,
-    jidDecode,
-    getContentType
-} = require("@whiskeysockets/baileys");
+const Baileys = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const { Boom } = require("@hapi/boom");
 const fs = require("fs");
 const path = require("path");
 const { logger, logConnection, logErrorBox } = require("./lib/colors");
 
-// Menyiapkan penyimpanan pesan sementara di memori
-const store = makeInMemoryStore({ logger: pino().child({ level: "silent", stream: "store" }) });
+// -- IMPORTS YANG LEBIH AMAN --
+// Kita ambil fungsi dari objek utama Baileys untuk menghindari error destructuring
+const makeWASocket = Baileys.default;
+const {
+    useMultiFileAuthState,
+    DisconnectReason,
+    fetchLatestBaileysVersion,
+    jidDecode,
+    makeInMemoryStore // Coba ambil dari sini dulu
+} = Baileys;
+
+// -- SETUP STORE (SAFE MODE) --
+// Kita cek apakah makeInMemoryStore itu ada dan berupa fungsi.
+// Jika tidak (error yang kamu alami), kita set store menjadi null agar bot tidak crash.
+let store = null;
+try {
+    if (typeof makeInMemoryStore === 'function') {
+        store = makeInMemoryStore({ 
+            logger: pino().child({ level: "silent", stream: "store" }) 
+        });
+    } else {
+        logger.warn("System", "makeInMemoryStore is not a function. Running without store.");
+    }
+} catch (e) {
+    logger.warn("System", "Failed to initialize store. Running without store.");
+}
 
 /**
  * Fungsi utama untuk mengelola koneksi WhatsApp
@@ -22,8 +38,14 @@ const store = makeInMemoryStore({ logger: pino().child({ level: "silent", stream
 async function startConnection(callbacks = {}) {
     const { onMessage, onGroupUpdate, onMessageUpdate, onGroupSettingsUpdate, onConnectionUpdate, onRawMessage } = callbacks;
     
+    // Pastikan folder session ada
+    const sessionDir = path.join(__dirname, "../session");
+    if (!fs.existsSync(sessionDir)) {
+        fs.mkdirSync(sessionDir, { recursive: true });
+    }
+
     // Mengelola folder sesi (auth)
-    const { state, saveCreds } = await useMultiFileAuthState(path.join(__dirname, "../session"));
+    const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
     const { version, isLatest } = await fetchLatestBaileysVersion();
 
     const sock = makeWASocket({
@@ -31,17 +53,27 @@ async function startConnection(callbacks = {}) {
         logger: pino({ level: "silent" }),
         printQRInTerminal: true,
         auth: state,
-        browser: ["Ourin-AI", "Safari", "1.0.0"],
+        browser: ["Ourin-AI", "Safari", "1.0.0"], // Browser diset ke Safari agar lebih stabil
+        generateHighQualityLinkPreview: true,
+        // Fungsi getMessage dimodifikasi agar tidak error jika store mati
         getMessage: async (key) => {
             if (store) {
-                const msg = await store.loadMessage(key.remoteJid, key.id);
-                return msg?.message || undefined;
+                try {
+                    const msg = await store.loadMessage(key.remoteJid, key.id);
+                    return msg?.message || undefined;
+                } catch (e) {
+                    return null;
+                }
             }
+            // Fallback jika store tidak aktif
             return { conversation: "Hello, I'm Ourin-AI" };
         }
     });
 
-    store.bind(sock.ev);
+    // Hanya bind store jika store berhasil diinisialisasi
+    if (store) {
+        store.bind(sock.ev);
+    }
 
     // Update Koneksi
     sock.ev.on("connection.update", async (update) => {
@@ -57,10 +89,10 @@ async function startConnection(callbacks = {}) {
                 logger.info("Connection", "Reconnecting...");
                 startConnection(callbacks);
             } else {
-                logErrorBox("Connection", "Disconnected. Please scan QR again.");
+                logErrorBox("Connection", "Disconnected. Please scan QR again (delete session folder).");
             }
         } else if (connection === "open") {
-            logConnection("connected", sock.user.id);
+            logConnection("connected", sock.user?.id || "Bot");
         }
     });
 
@@ -73,10 +105,10 @@ async function startConnection(callbacks = {}) {
             const m = chatUpdate.messages[0];
             if (!m.message) return;
             
-            // Raw message callback (digunakan untuk Anti-Tag SW dll)
+            // Raw message callback
             if (onRawMessage) await onRawMessage(m, sock);
             
-            // Format pesan agar lebih mudah dibaca oleh handler
+            // Handler utama
             if (onMessage) await onMessage(m, sock);
         } catch (err) {
             logger.error("Connection Upsert", err.message);
@@ -112,5 +144,5 @@ async function startConnection(callbacks = {}) {
     return sock;
 }
 
-// EKSPOR: Sangat penting agar index.js bisa membaca fungsi ini
+// EKSPOR: Penting!
 module.exports = { startConnection };
