@@ -73,7 +73,7 @@ const config = {
     },
 
     saluran: {
-        id: 'kantin-jaya.vercel.app',                           // ID saluran (contoh: 120363xxx@newsletter)
+        id: '120363175366250567@newsletterp',                           // ID saluran (contoh: 120363xxx@newsletter)
         name: 'BangSilaban',       // Nama saluran
         link: 'jonsilaban.me'                          // Link saluran
     },
