@@ -1,8 +1,8 @@
-
 const { getUptime } = require('./lib/functions');
 const config = require("../config");
 const { isSelf } = require("../config");
 const { serialize } = require("./lib/serialize");
+const fs = require("fs"); // Pindahkan fs ke atas
 const {
   getPlugin,
   getPluginCount,
@@ -19,8 +19,11 @@ const {
   createWaitMessage,
   createErrorMessage,
 } = require("./lib/formatter");
-// Hapus getUptime dari sini karena sudah ada di import functions
-const { startConnection } = require("./connection");
+
+// --- PERBAIKAN UTAMA: HANYA IMPORT startConnection ---
+const { startConnection } = require("./connection"); 
+// -----------------------------------------------------
+
 const { logger, logMessage, logCommand, c } = require("./lib/colors");
 const {
   isLid,
@@ -51,7 +54,6 @@ const {
 } = require("./lib/jadibotDatabase");
 const { getActiveJadibots } = require("./lib/jadibotManager");
 const { handleCommand: handleCaseCommand } = require("../case/ourin");
-const fs = require("fs");
 
 let checkAfk = null;
 let isMuted = null;
@@ -63,26 +65,18 @@ let checkLevelUp = null;
 let incrementChatCount = null;
 let checkStickerCommand = null;
 
-// Antispam delay tracker - users who were detected spamming get 3s delay
+// Antispam delay tracker
 const spamDelayTracker = new Map();
 
-try {
-  checkAfk = require("../plugins/group/afk").checkAfk;
-} catch (e) {}
-
-try {
-  isMuted = require("../plugins/group/mute").isMuted;
-} catch (e) {}
-
+// Load optional modules safely
+try { checkAfk = require("../plugins/group/afk").checkAfk; } catch (e) {}
+try { isMuted = require("../plugins/group/mute").isMuted; } catch (e) {}
 try {
   const antispamModule = require("../plugins/group/antispam");
   checkSpam = antispamModule.checkSpam;
   handleSpamAction = antispamModule.handleSpamAction;
 } catch (e) {}
-
-try {
-  checkSlowmode = require("../plugins/group/slowmode").checkSlowmode;
-} catch (e) {}
+try { checkSlowmode = require("../plugins/group/slowmode").checkSlowmode; } catch (e) {}
 
 let isToxic = null;
 let handleToxicMessage = null;
@@ -93,14 +87,10 @@ try {
 } catch (e) {}
 
 let handleAutoAI = null;
-try {
-  handleAutoAI = require("./lib/autoaiHandler").handleAutoAI;
-} catch (e) {}
+try { handleAutoAI = require("./lib/autoaiHandler").handleAutoAI; } catch (e) {}
 
 let handleAutoDownload = null;
-try {
-  handleAutoDownload = require("./lib/autoDownload").handleAutoDownload;
-} catch (e) {}
+try { handleAutoDownload = require("./lib/autoDownload").handleAutoDownload; } catch (e) {}
 
 try {
   const levelModule = require("../plugins/user/level");
@@ -108,77 +98,33 @@ try {
   checkLevelUp = levelModule.checkLevelUp;
 } catch (e) {}
 
-try {
-  incrementChatCount = require("../plugins/group/totalchat").incrementChatCount;
-} catch (e) {}
-
-try {
-  checkStickerCommand = require("./lib/stickerCommand").checkStickerCommand;
-} catch (e) {}
+try { incrementChatCount = require("../plugins/group/totalchat").incrementChatCount; } catch (e) {}
+try { checkStickerCommand = require("./lib/stickerCommand").checkStickerCommand; } catch (e) {}
 
 let detectBot = null;
-try {
-  detectBot = require("../plugins/group/antibot").detectBot;
-} catch (e) {}
+try { detectBot = require("../plugins/group/antibot").detectBot; } catch (e) {}
 
 let autoStickerHandler = null;
-try {
-  autoStickerHandler =
-    require("../plugins/group/autosticker").autoStickerHandler;
-} catch (e) {}
+try { autoStickerHandler = require("../plugins/group/autosticker").autoStickerHandler; } catch (e) {}
 
 let autoMediaHandler = null;
-try {
-  autoMediaHandler = require("../plugins/group/automedia").autoMediaHandler;
-} catch (e) {}
+try { autoMediaHandler = require("../plugins/group/automedia").autoMediaHandler; } catch (e) {}
 
 let checkAntisticker = null;
-try {
-  checkAntisticker = require("../plugins/group/antisticker").checkAntisticker;
-} catch (e) {}
+try { checkAntisticker = require("../plugins/group/antisticker").checkAntisticker; } catch (e) {}
 
 let checkAntimedia = null;
-try {
-  checkAntimedia = require("../plugins/group/antimedia").checkAntimedia;
-} catch (e) {}
+try { checkAntimedia = require("../plugins/group/antimedia").checkAntimedia; } catch (e) {}
 
-/**
- * @typedef {Object} HandlerContext
- * @property {Object} sock - Socket connection
- * @property {Object} m - Serialized message
- * @property {Object} config - Bot configuration
- * @property {Object} db - Database instance
- * @property {number} uptime - Bot uptime
- */
-
-/**
- * Anti-spam map untuk tracking pesan per user
- * @type {Map<string, number>}
- */
 const spamMap = new Map();
 
 const gamePlugins = [
-  "asahotak",
-  "tebakkata",
-  "tebakgambar",
-  "siapakahaku",
-  "tekateki",
-  "susunkata",
-  "caklontong",
-  "family100",
-  "tebakbendera",
-  "tebakkalimat",
-  "tebaklirik",
-  "tebaktebakan",
-  "tebakkimia",
-  "tebakdrakor",
-  "tebakepep",
-  "tebakjkt48",
-  "tebakmakanan",
-  "quizbattle",
+  "asahotak", "tebakkata", "tebakgambar", "siapakahaku", "tekateki",
+  "susunkata", "caklontong", "family100", "tebakbendera", "tebakkalimat",
+  "tebaklirik", "tebaktebakan", "tebakkimia", "tebakdrakor", "tebakepep",
+  "tebakjkt48", "tebakmakanan", "quizbattle",
 ];
 
-// Pre-cache game plugins at startup for performance
 const cachedGamePlugins = new Map();
 for (const gameName of gamePlugins) {
   try {
@@ -186,11 +132,6 @@ for (const gameName of gamePlugins) {
     if (plugin.answerHandler) cachedGamePlugins.set(gameName, plugin);
   } catch (e) {}
 }
-
-let sulapPlugin = null;
-try {
-  sulapPlugin = require("../plugins/fun/sulap");
-} catch (e) {}
 
 async function handleGameAnswer(m, sock) {
   try {
@@ -243,8 +184,7 @@ async function handleSmartTriggers(m, sock, db) {
     }
   }
 
-  const globalSmartTriggers =
-    db.setting("smartTriggers") ?? config.features?.smartTriggers ?? false;
+  const globalSmartTriggers = db.setting("smartTriggers") ?? config.features?.smartTriggers ?? false;
 
   try {
     const saluranId = config.saluran?.id || "120363208449943317@newsletter";
@@ -411,11 +351,6 @@ async function handleSmartTriggers(m, sock, db) {
   return false;
 }
 
-/**
- * Cek apakah user sedang spam
- * @param {string} jid - JID user
- * @returns {boolean} True jika sedang spam
- */
 function isSpamming(jid) {
   if (!config.features?.antiSpam) return false;
 
@@ -431,12 +366,6 @@ function isSpamming(jid) {
   return false;
 }
 
-/**
- * Cek permission untuk menjalankan command
- * @param {Object} m - Serialized message
- * @param {Object} pluginConfig - Konfigurasi plugin
- * @returns {{allowed: boolean, reason: string}} Object dengan status dan alasan
- */
 function checkPermission(m, pluginConfig) {
   const db = getDatabase();
   const user = db.getUser(m.sender) || {};
@@ -448,7 +377,6 @@ function checkPermission(m, pluginConfig) {
     if (accessFound) {
       if (accessFound.expired === null || accessFound.expired > Date.now()) {
         hasAccess = true;
-        console.log("[DEBUG Access] Access Granted!");
       } else {
         user.access = user.access.filter(
           (a) => a.cmd !== m.command.toLowerCase(),
@@ -510,11 +438,6 @@ function checkPermission(m, pluginConfig) {
   return { allowed: true, reason: "" };
 }
 
-/**
- * Cek mode bot dengan validasi kuat
- * @param {Object} m - Serialized message
- * @returns {boolean} True jika boleh diproses
- */
 function checkMode(m) {
   const db = getDatabase();
   const realConfig = require("../config");
@@ -619,13 +542,6 @@ function formatAfkDuration(ms) {
 
 /**
  * Handler utama untuk memproses pesan
- * @param {Object} msg - Raw message dari Baileys
- * @param {Object} sock - Socket connection
- * @returns {Promise<void>}
- * @example
- * sock.ev.on('messages.upsert', async ({ messages }) => {
- *   await messageHandler(messages[0], sock);
- * });
  */
 async function messageHandler(msg, sock, options = {}) {
   const isJadibot = options.isJadibot || false;
@@ -703,7 +619,6 @@ async function messageHandler(msg, sock, options = {}) {
     if (m.isGroup && m.isCommand && !m.isOwner) {
       const groupData = db.getGroup(m.chat) || {};
       if (groupData.isBanned) {
-        // kalau mau nambih text juga boleh bang, pake m.reply atau sendMessage
         return null;
       }
     }
@@ -740,7 +655,6 @@ async function messageHandler(msg, sock, options = {}) {
       if (m.isGroup) {
         const groupData = db.getGroup(m.chat);
         groupName = groupData?.name || "Unknown Group";
-        // Fetch metadata async without blocking - don't await
         if (groupName === "Unknown Group" || groupName === "Unknown") {
           sock
             .groupMetadata(m.chat)
@@ -1030,7 +944,6 @@ async function messageHandler(msg, sock, options = {}) {
           `> 💳 Ketik \`${m.prefix}payment\` untuk bayar`;
 
         if (storeCommand.hasImage && storeCommand.imagePath) {
-          const fs = require("fs");
           if (fs.existsSync(storeCommand.imagePath)) {
             const imageBuffer = fs.readFileSync(storeCommand.imagePath);
             await sock.sendMessage(
@@ -1081,7 +994,6 @@ async function messageHandler(msg, sock, options = {}) {
           `> 💳 Ketik \`${m.prefix}payment\` untuk bayar`;
 
         if (storeCommand.hasImage && storeCommand.imagePath) {
-          const fs = require("fs");
           if (fs.existsSync(storeCommand.imagePath)) {
             const imageBuffer = fs.readFileSync(storeCommand.imagePath);
             await sock.sendMessage(
@@ -1365,12 +1277,13 @@ async function messageHandler(msg, sock, options = {}) {
       await sock.sendPresenceUpdate("composing", m.chat);
     }
 
+    // --- FIX: getUptime now available ---
     const context = {
       sock,
       m,
       config,
       db,
-      uptime: getUptime(),
+      uptime: getUptime(process.uptime()), // Panggil dengan parameter seconds
       plugins: {
         count: getPluginCount(),
       },
@@ -1378,7 +1291,6 @@ async function messageHandler(msg, sock, options = {}) {
       isJadibot: isJadibot,
     };
 
-    // Log command execution with box style
     const chatType = m.isGroup ? "group" : "private";
     if (!isJadibot) {
       logCommand(`${m.prefix}${m.command}`, m.pushName, chatType);
@@ -1412,12 +1324,6 @@ async function messageHandler(msg, sock, options = {}) {
   }
 }
 
-/**
- * Handler untuk update group participants
- * @param {Object} update - Update data
- * @param {Object} sock - Socket connection
- * @returns {Promise<void>}
- */
 async function groupHandler(update, sock) {
   try {
     if (global.sewaLeaving) return;
@@ -1605,15 +1511,7 @@ async function messageUpdateHandler(updates, sock) {
   }
 }
 
-/**
- * Cache untuk menyimpan state terakhir grup
- * Format: { groupId: { announce: boolean, restrict: boolean, lastUpdate: timestamp } }
- */
 const groupSettingsCache = new Map();
-
-/**
- * Debounce cooldown untuk mencegah spam (dalam ms)
- */
 const GROUP_SETTINGS_COOLDOWN = 1000;
 
 async function groupSettingsHandler(update, sock) {
