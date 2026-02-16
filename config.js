@@ -90,7 +90,7 @@ const config = {
     },
 
     registration: {
-        enabled: true,
+        enabled: false,
         rewards: {
             balance: 30000,
             limit: 300,
