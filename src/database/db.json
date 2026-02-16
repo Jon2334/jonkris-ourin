@@ -1,0 +1,421 @@
+{
+  "users": {
+    "6285189209832": {
+      "jid": "6285189209832",
+      "name": "ell kerung",
+      "number": "6285189209832",
+      "limit": 25,
+      "isPremium": false,
+      "isBanned": false,
+      "exp": 0,
+      "level": 1,
+      "balance": 0,
+      "unlockedFeatures": [],
+      "registeredAt": "2026-01-29T06:56:15.178Z",
+      "lastSeen": "2026-01-29T06:56:45.327Z",
+      "cooldowns": {},
+      "clanId": null,
+      "isRegistered": false,
+      "regName": null,
+      "regAge": null,
+      "regGender": null,
+      "rpg": {},
+      "inventory": {},
+      "access": []
+    },
+    "84988289146": {
+      "jid": "84988289146",
+      "name": "ASISTEN - Febb",
+      "number": "84988289146",
+      "limit": 25,
+      "isPremium": false,
+      "isBanned": false,
+      "exp": 0,
+      "level": 1,
+      "balance": 0,
+      "unlockedFeatures": [],
+      "registeredAt": "2026-01-29T06:56:36.179Z",
+      "lastSeen": "2026-01-29T07:04:55.536Z",
+      "cooldowns": {},
+      "clanId": null,
+      "isRegistered": false,
+      "regName": null,
+      "regAge": null,
+      "regGender": null,
+      "rpg": {},
+      "inventory": {},
+      "access": []
+    },
+    "62895402458329": {
+      "jid": "62895402458329",
+      "name": "XxyrooByte.",
+      "number": "62895402458329",
+      "limit": 24,
+      "isPremium": false,
+      "isBanned": false,
+      "exp": 0,
+      "level": 1,
+      "balance": 0,
+      "unlockedFeatures": [],
+      "registeredAt": "2026-01-29T06:56:47.647Z",
+      "lastSeen": "2026-01-29T08:27:02.038Z",
+      "cooldowns": {
+        "menu": 1769675227038,
+        "play": 1769675174646
+      },
+      "clanId": null,
+      "isRegistered": false,
+      "regName": null,
+      "regAge": null,
+      "regGender": null,
+      "rpg": {},
+      "inventory": {},
+      "access": []
+    },
+    "6282324624080": {
+      "jid": "6282324624080",
+      "name": "𝙆𝙀𝙄",
+      "number": "6282324624080",
+      "limit": 25,
+      "isPremium": false,
+      "isBanned": false,
+      "exp": 0,
+      "level": 1,
+      "balance": 0,
+      "unlockedFeatures": [],
+      "registeredAt": "2026-01-29T06:56:52.657Z",
+      "lastSeen": "2026-01-29T08:30:45.115Z",
+      "cooldowns": {},
+      "clanId": null,
+      "isRegistered": false,
+      "regName": null,
+      "regAge": null,
+      "regGender": null,
+      "rpg": {},
+      "inventory": {},
+      "access": []
+    },
+    "628136216304": {
+      "jid": "628136216304",
+      "name": "Feb",
+      "number": "628136216304",
+      "limit": 25,
+      "isPremium": false,
+      "isBanned": false,
+      "exp": 0,
+      "level": 1,
+      "balance": 0,
+      "unlockedFeatures": [],
+      "registeredAt": "2026-01-29T07:03:48.524Z",
+      "lastSeen": "2026-01-29T07:04:03.702Z",
+      "cooldowns": {},
+      "clanId": null,
+      "isRegistered": false,
+      "regName": null,
+      "regAge": null,
+      "regGender": null,
+      "rpg": {},
+      "inventory": {},
+      "access": []
+    },
+    "6285787735243": {
+      "jid": "6285787735243",
+      "name": "Azis☕︎",
+      "number": "6285787735243",
+      "limit": 25,
+      "isPremium": false,
+      "isBanned": false,
+      "exp": 0,
+      "level": 1,
+      "balance": 0,
+      "unlockedFeatures": [],
+      "registeredAt": "2026-01-29T07:04:44.941Z",
+      "lastSeen": "2026-01-29T08:20:52.400Z",
+      "cooldowns": {
+        "allmenu": 1769674648318,
+        "sound77": 1769674857400
+      },
+      "clanId": null,
+      "isRegistered": false,
+      "regName": null,
+      "regAge": null,
+      "regGender": null,
+      "rpg": {},
+      "inventory": {},
+      "access": []
+    },
+    "6283106414327": {
+      "jid": "6283106414327",
+      "name": "Zann",
+      "number": "6283106414327",
+      "limit": 25,
+      "isPremium": false,
+      "isBanned": false,
+      "exp": 0,
+      "level": 1,
+      "balance": 0,
+      "unlockedFeatures": [],
+      "registeredAt": "2026-01-29T07:06:04.156Z",
+      "lastSeen": "2026-01-29T08:29:16.205Z",
+      "cooldowns": {},
+      "clanId": null,
+      "isRegistered": false,
+      "regName": null,
+      "regAge": null,
+      "regGender": null,
+      "rpg": {},
+      "inventory": {},
+      "access": []
+    },
+    "6285712164454": {
+      "jid": "6285712164454",
+      "name": "Nopal",
+      "number": "6285712164454",
+      "limit": 25,
+      "isPremium": false,
+      "isBanned": false,
+      "exp": 0,
+      "level": 1,
+      "balance": 0,
+      "unlockedFeatures": [],
+      "registeredAt": "2026-01-29T08:08:23.021Z",
+      "lastSeen": "2026-01-29T08:20:49.834Z",
+      "cooldowns": {
+        "totalfitur": 1769674743214
+      },
+      "clanId": null,
+      "isRegistered": false,
+      "regName": null,
+      "regAge": null,
+      "regGender": null,
+      "rpg": {},
+      "inventory": {},
+      "access": []
+    },
+    "628979985621": {
+      "jid": "628979985621",
+      "name": "Udun",
+      "number": "628979985621",
+      "limit": 25,
+      "isPremium": false,
+      "isBanned": false,
+      "exp": 0,
+      "level": 1,
+      "balance": 0,
+      "unlockedFeatures": [],
+      "registeredAt": "2026-01-29T08:08:44.854Z",
+      "lastSeen": "2026-01-29T08:30:00.309Z",
+      "cooldowns": {},
+      "clanId": null,
+      "isRegistered": false,
+      "regName": null,
+      "regAge": null,
+      "regGender": null,
+      "rpg": {},
+      "inventory": {},
+      "access": []
+    },
+    "6283899252410": {
+      "jid": "6283899252410",
+      "name": "remi",
+      "number": "6283899252410",
+      "limit": 25,
+      "isPremium": false,
+      "isBanned": false,
+      "exp": 0,
+      "level": 1,
+      "balance": 0,
+      "unlockedFeatures": [],
+      "registeredAt": "2026-01-29T08:17:24.479Z",
+      "lastSeen": "2026-01-29T08:23:30.493Z",
+      "cooldowns": {},
+      "clanId": null,
+      "isRegistered": false,
+      "regName": null,
+      "regAge": null,
+      "regGender": null,
+      "rpg": {},
+      "inventory": {},
+      "access": []
+    },
+    "628133363075": {
+      "jid": "628133363075",
+      "name": "Hilman Habibal Qois",
+      "number": "628133363075",
+      "limit": 25,
+      "isPremium": false,
+      "isBanned": false,
+      "exp": 0,
+      "level": 1,
+      "balance": 0,
+      "unlockedFeatures": [],
+      "registeredAt": "2026-01-29T08:23:24.110Z",
+      "lastSeen": "2026-01-29T08:23:54.888Z",
+      "cooldowns": {
+        "ping": 1769675019379,
+        "sad2": 1769675029529
+      },
+      "clanId": null,
+      "isRegistered": false,
+      "regName": null,
+      "regAge": null,
+      "regGender": null,
+      "rpg": {},
+      "inventory": {},
+      "access": []
+    }
+  },
+  "groups": {
+    "120363403738794364@g.us": {
+      "jid": "120363403738794364@g.us",
+      "name": "𝐺𝑅𝑈𝑃 𝐶𝐻𝐴𝑇 - 𝑂𝑈𝑅𝐼𝑁 𝑀𝐷",
+      "welcome": false,
+      "leave": false,
+      "goodbye": false,
+      "antilink": false,
+      "antitoxic": false,
+      "mute": false,
+      "warnings": [],
+      "chatStats": {
+        "84988289146@s.whatsapp.net": {
+          "count": 3,
+          "lastChat": 1769670295537
+        },
+        "6285189209832@s.whatsapp.net": {
+          "count": 1,
+          "lastChat": 1769669805328
+        },
+        "62895402458329@s.whatsapp.net": {
+          "count": 13,
+          "lastChat": 1769674823963
+        },
+        "6282324624080@s.whatsapp.net": {
+          "count": 1,
+          "lastChat": 1769669812658
+        },
+        "628136216304@s.whatsapp.net": {
+          "count": 3,
+          "lastChat": 1769670243703
+        },
+        "6285787735243@s.whatsapp.net": {
+          "count": 3,
+          "lastChat": 1769674850221
+        },
+        "6283106414327@s.whatsapp.net": {
+          "count": 11,
+          "lastChat": 1769675114382
+        },
+        "6283899252410@s.whatsapp.net": {
+          "count": 5,
+          "lastChat": 1769675010495
+        },
+        "628133363075@s.whatsapp.net": {
+          "count": 3,
+          "lastChat": 1769675034889
+        }
+      }
+    },
+    "120363423808062915@g.us": {
+      "jid": "120363423808062915@g.us",
+      "name": "PROGRESS V1.9.0",
+      "welcome": false,
+      "leave": false,
+      "goodbye": false,
+      "antilink": false,
+      "antitoxic": false,
+      "mute": false,
+      "warnings": [],
+      "chatStats": {
+        "6283106414327@s.whatsapp.net": {
+          "count": 16,
+          "lastChat": 1769675356206
+        },
+        "62895402458329@s.whatsapp.net": {
+          "count": 22,
+          "lastChat": 1769675203271
+        },
+        "628979985621@s.whatsapp.net": {
+          "count": 13,
+          "lastChat": 1769675400311
+        },
+        "6282324624080@s.whatsapp.net": {
+          "count": 4,
+          "lastChat": 1769675445117
+        }
+      }
+    },
+    "120363406296257277@g.us": {
+      "jid": "120363406296257277@g.us",
+      "name": "Unknown Group",
+      "welcome": false,
+      "leave": false,
+      "goodbye": false,
+      "antilink": false,
+      "antitoxic": false,
+      "mute": false,
+      "warnings": []
+    },
+    "120363424358198516@g.us": {
+      "jid": "120363424358198516@g.us",
+      "name": "ALL RESS-MODERATOR SC/APK OURIN",
+      "welcome": false,
+      "leave": false,
+      "goodbye": false,
+      "antilink": false,
+      "antitoxic": false,
+      "mute": false,
+      "warnings": [],
+      "chatStats": {
+        "6285712164454@s.whatsapp.net": {
+          "count": 10,
+          "lastChat": 1769674849835
+        },
+        "6283106414327@s.whatsapp.net": {
+          "count": 8,
+          "lastChat": 1769674758984
+        }
+      }
+    },
+    "120363422657562730@g.us": {
+      "jid": "120363422657562730@g.us",
+      "name": "Aa",
+      "welcome": false,
+      "leave": false,
+      "goodbye": false,
+      "antilink": false,
+      "antitoxic": false,
+      "mute": false,
+      "warnings": [],
+      "chatStats": {
+        "6283106414327@s.whatsapp.net": {
+          "count": 4,
+          "lastChat": 1769674330244
+        }
+      }
+    }
+  },
+  "settings": {
+    "selfMode": false,
+    "ownerNumbers": [
+      "6283106414327",
+      "62xxxxxxxxx"
+    ],
+    "menuVariant": 5
+  },
+  "stats": {
+    "commandsExecuted": 21,
+    "command_menu": 10,
+    "command_setmenu": 2,
+    "command_allmenu": 1,
+    "command_totalfitur": 1,
+    "command_sound77": 1,
+    "command_ping": 1,
+    "command_sad2": 1,
+    "command_play": 2,
+    "command_ganti-ourin.mp3": 2
+  },
+  "sewa": {
+    "enabled": false,
+    "groups": {}
+  }
+}
