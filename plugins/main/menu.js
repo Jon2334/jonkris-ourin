@@ -5,7 +5,8 @@ const { getDatabase } = require('../../src/lib/database');
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
-const { generateWAMessageFromContent, proto } = require('ourin');
+const { generateWAMessageFromContent, proto, prepareWAMessageMedia } = require('ourin');
+
 /**
  * Credits & Thanks to
  * Developer = Lucky Archz ( Zann )
@@ -15,14 +16,12 @@ const { generateWAMessageFromContent, proto } = require('ourin');
  * Wileys = Penyedia baileys
  * Penyedia API
  * Penyedia Scraper
- * 
- * JANGAN HAPUS/GANTI CREDITS & THANKS TO
+ * * JANGAN HAPUS/GANTI CREDITS & THANKS TO
  * JANGAN DIJUAL YA MEKS
- * 
- * Saluran Resmi Ourin:
+ * * Saluran Resmi Ourin:
  * https://whatsapp.com/channel/0029VbB37bgBfxoAmAlsgE0t 
- * 
- */
+ * */
+
 const pluginConfig = {
     name: 'menu',
     alias: ['help', 'bantuan', 'commands', 'm'],
@@ -30,10 +29,10 @@ const pluginConfig = {
     description: 'Menampilkan menu utama bot',
     usage: '.menu',
     example: '.menu',
-    isOwner: true,
-    isPremium: true,
-    isGroup: true,
-    isPrivate: true,
+    isOwner: false,
+    isPremium: false,
+    isGroup: false,
+    isPrivate: false,
     cooldown: 5,
     limit: 0,
     isEnabled: true
@@ -43,7 +42,8 @@ const CATEGORY_EMOJIS = {
     owner: '👑', main: '🏠', utility: '🔧', fun: '🎮', group: '👥',
     download: '📥', search: '🔍', tools: '🛠️', sticker: '🖼️',
     ai: '🤖', game: '🎯', media: '🎬', info: 'ℹ️', religi: '☪️',
-    panel: '🖥️', user: '📊', linode: '☁️', random: '🎲', canvas: '🎨', vps: '🌊'
+    panel: '🖥️', user: '📊', linode: '☁️', random: '🎲', canvas: '🎨', vps: '🌊',
+    cek: '🔎', economy: '💰', ephoto: '📸', jpm: '⚡', pushkontak: '📱', store: '🏪'
 };
 
 function toSmallCaps(text) {
@@ -56,14 +56,14 @@ function toSmallCaps(text) {
     return text.toLowerCase().split('').map(c => smallCaps[c] || c).join('');
 }
 
-function formatTime(date) {
-    const timeHelper = require('../../src/lib/timeHelper');
-    return timeHelper.formatTime('HH:mm');
-}
-
-function formatDateShort(date) {
-    const timeHelper = require('../../src/lib/timeHelper');
-    return timeHelper.formatFull('dddd, DD MMMM YYYY');
+function toMonoUpperBold(text) {
+    const chars = {
+        'A': '𝗔', 'B': '𝗕', 'C': '𝗖', 'D': '𝗗', 'E': '𝗘', 'F': '𝗙', 'G': '𝗚',
+        'H': '𝗛', 'I': '𝗜', 'J': '𝗝', 'K': '𝗞', 'L': '𝗟', 'M': '𝗠', 'N': '𝗡',
+        'O': '𝗢', 'P': '𝗣', 'Q': '𝗤', 'R': '𝗥', 'S': '𝗦', 'T': '𝗧', 'U': '𝗨',
+        'V': '𝗩', 'W': '𝗪', 'X': '𝗫', 'Y': '𝗬', 'Z': '𝗭'
+    };
+    return text.toUpperCase().split('').map(c => chars[c] || c).join('');
 }
 
 function buildMenuText(m, botConfig, db, uptime, botMode = 'md') {
@@ -81,9 +81,16 @@ function buildMenuText(m, botConfig, db, uptime, botMode = 'md') {
         totalCommands += (commandsByCategory[category] || []).length;
     }
     
-    const { getCaseCount, getCasesByCategory } = require('../../case/ourin');
-    const totalCases = getCaseCount();
-    const casesByCategory = getCasesByCategory();
+    // Check if case handler exists before requiring
+    let totalCases = 0;
+    let casesByCategory = {};
+    try {
+        const { getCaseCount, getCasesByCategory } = require('../../case/ourin');
+        totalCases = getCaseCount();
+        casesByCategory = getCasesByCategory();
+    } catch (e) {
+        // Fallback if case handler not found
+    }
     
     const totalFeatures = totalCommands + totalCases;
     
@@ -94,10 +101,9 @@ function buildMenuText(m, botConfig, db, uptime, botMode = 'md') {
     const greeting = getTimeGreeting();
     const uptimeFormatted = formatUptime(uptime);
     const totalUsers = db.getUserCount();
-    const greetEmoji = greeting.includes('pagi') ? '🌅' : greeting.includes('siang') ? '☀️' : greeting.includes('sore') ? '🌇' : '🌙';
     
     let txt = `Hai *@${m.pushName || "User"}* 🪸
-Aku ${botConfig.bot?.name || 'Ourin-AI'}, bot WhatsApp yang siap bantu kamu.  
+Aku ${botConfig.bot?.name || 'Ourin-AI'}, bot WhatsApp yang siap bantu kamu. 
 
 Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana langsung lewat WhatsApp — praktis tanpa ribet.`
 
@@ -168,7 +174,6 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
         if (totalCmds === 0) continue;
         
         const emoji = CATEGORY_EMOJIS[category] || '📁';
-        const categoryName = toSmallCaps(category);
         
         txt += `\`◦\` *${prefix}${toSmallCaps(`menucat ${category}`)}* ${emoji}\n`;
     }
@@ -213,20 +218,19 @@ function getContextInfo(botConfig, m, thumbBuffer, renderLargerThumbnail = false
 }
 
 function getVerifiedQuoted(botConfig) {
-    const saluranId = botConfig.saluran?.id || '120363208449943317@newsletter';
-    const saluranName = botConfig.saluran?.name || botConfig.bot?.name || 'Ourin-AI';
-    
     return {
-                key: {
-                    participant: `0@s.whatsapp.net`,
-                    remoteJid: `status@broadcast`
-                    },
-                message: {
-                    'contactMessage': {
-                    'displayName': `🪸 ${botConfig.bot?.name}`,
-                    'vcard': `BEGIN:VCARD\nVERSION:3.0\nN:XL;ttname,;;;\nFN:ttname\nitem1.TEL;waid=13135550002:+1 (313) 555-0002\nitem1.X-ABLabel:Ponsel\nEND:VCARD`,
+        key: {
+            participant: `0@s.whatsapp.net`,
+            remoteJid: `status@broadcast`
+        },
+        message: {
+            'contactMessage': {
+                'displayName': `🪸 ${botConfig.bot?.name || 'Ourin-AI'}`,
+                'vcard': `BEGIN:VCARD\nVERSION:3.0\nN:XL;ttname,;;;\nFN:ttname\nitem1.TEL;waid=6281234567890:+62 812-3456-7890\nitem1.X-ABLabel:Ponsel\nEND:VCARD`,
                 sendEphemeral: true
-            }}}  
+            }
+        }
+    }  
 }
 
 async function handler(m, { sock, config: botConfig, db, uptime }) {
@@ -321,41 +325,29 @@ async function handler(m, { sock, config: botConfig, db, uptime }) {
                 
                 const categories = getCategories();
                 const commandsByCategory = getCommandsByCategory();
-                const categoryOrder = ['owner', 'main', 'utility', 'tools', 'fun', 'game', 'download', 'search', 'sticker', 'media', 'ai', 'group', 'religi', 'info', 'jpm', 'pushkontak', 'panel', 'user'];
+                const categoryOrderV5 = ['owner', 'main', 'utility', 'tools', 'fun', 'game', 'download', 'search', 'sticker', 'media', 'ai', 'group', 'religi', 'info', 'jpm', 'pushkontak', 'panel', 'user'];
                 
                 const sortedCats = [...categories].sort((a, b) => {
-                    const indexA = categoryOrder.indexOf(a);
-                    const indexB = categoryOrder.indexOf(b);
+                    const indexA = categoryOrderV5.indexOf(a);
+                    const indexB = categoryOrderV5.indexOf(b);
                     return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
                 });
                 
-                const toMonoUpperBold = (text) => {
-                    const chars = {
-                        'A': '𝗔', 'B': '𝗕', 'C': '𝗖', 'D': '𝗗', 'E': '𝗘', 'F': '𝗙', 'G': '𝗚',
-                        'H': '𝗛', 'I': '𝗜', 'J': '𝗝', 'K': '𝗞', 'L': '𝗟', 'M': '𝗠', 'N': '𝗡',
-                        'O': '𝗢', 'P': '𝗣', 'Q': '𝗤', 'R': '𝗥', 'S': '𝗦', 'T': '𝗧', 'U': '𝗨',
-                        'V': '𝗩', 'W': '𝗪', 'X': '𝗫', 'Y': '𝗬', 'Z': '𝗭'
-                    };
-                    return text.toUpperCase().split('').map(c => chars[c] || c).join('');
-                };
-                
                 const categoryRows = [];
                 
-                const modeAllowedMap = {
+                const modeAllowedMapV5 = {
                     md: null,
                     cpanel: ['main', 'group', 'sticker', 'owner', 'tools', 'panel'],
                     store: ['main', 'group', 'sticker', 'owner', 'store'],
                     pushkontak: ['main', 'group', 'sticker', 'owner', 'pushkontak']
                 };
-                const modeExcludeMap = {
+                const modeExcludeMapV5 = {
                     md: ['panel', 'pushkontak', 'store'],
-                    cpanel: null,
-                    store: null,
-                    pushkontak: null
+                    cpanel: null, store: null, pushkontak: null
                 };
                 
-                const allowedCats = modeAllowedMap[botMode];
-                const excludeCats = modeExcludeMap[botMode] || [];
+                const allowedCats = modeAllowedMapV5[botMode];
+                const excludeCats = modeExcludeMapV5[botMode] || [];
                 
                 for (const cat of sortedCats) {
                     if (cat === 'owner' && !m.isOwner) continue;
@@ -380,10 +372,7 @@ async function handler(m, { sock, config: botConfig, db, uptime }) {
                     totalCmds += (commandsByCategory[cat] || []).length;
                 }
                 
-                const now = new Date();
-                const greeting = getTimeGreeting();
-                const greetEmoji = greeting.includes('pagi') ? '🌅' : greeting.includes('siang') ? '☀️' : greeting.includes('sore') ? '🌇' : '🌙';
-                const uptimeFormatted = formatUptime(uptime);
+                const uptimeFormattedV5 = formatUptime(uptime);
                 
                 let headerText = `*@${m.pushName || "User"}* 🪸
 
@@ -394,14 +383,12 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                 headerText += `┃ \`◦\` ɴᴀᴍᴀ: *${botConfig.bot?.name || 'Ourin-AI'}*\n`;
                 headerText += `┃ \`◦\` ᴠᴇʀsɪ: *v${botConfig.bot?.version || '1.2.0'}*\n`;
                 headerText += `┃ \`◦\` ᴍᴏᴅᴇ: *${(botConfig.mode || 'public').toUpperCase()}*\n`;
-                headerText += `┃ \`◦\` ᴜᴘᴛɪᴍᴇ: *${uptimeFormatted}*\n`;
+                headerText += `┃ \`◦\` ᴜᴘᴛɪᴍᴇ: *${uptimeFormattedV5}*\n`;
                 headerText += `┃ \`◦\` ᴛᴏᴛᴀʟ ᴄᴍᴅ: *${totalCmds}*\n`;
                 headerText += `╰┈┈┈┈┈┈┈┈⬡\n\n`;
                 headerText += `📋 *Pilih kategori di bawah untuk melihat daftar command*`;
                 
                 try {
-                    const { generateWAMessageFromContent, proto } = require('ourin');
-                    
                     const buttons = [
                         {
                             name: 'single_select',
@@ -425,7 +412,6 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                     let headerMedia = null;
                     if (imageBuffer) {
                         try {
-                            const { prepareWAMessageMedia } = require('ourin');
                             headerMedia = await prepareWAMessageMedia({
                                 image: imageBuffer
                             }, {
@@ -559,7 +545,6 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                 
             case 7:
                 try {
-                    const { prepareWAMessageMedia } = require('ourin');
                     const prefixV7 = botConfig.command?.prefix || '.';
                     const categoriesV7 = getCategories();
                     const commandsByCategoryV7 = getCommandsByCategory();
@@ -709,7 +694,6 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                 const timeV8 = timeHelperV8.formatTime('HH:mm');
                 const dateV8 = timeHelperV8.formatFull('DD/MM/YYYY');
                 const userV8 = db.getUser(m.sender);
-                const greetingV8 = getTimeGreeting();
                 const uptimeV8 = formatUptime(uptime);
                 
                 const categoriesV8 = getCategories();
@@ -739,7 +723,7 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                 };
                 const modeExcludeV8 = {
                     md: ['panel', 'pushkontak', 'store'],
-                    cpanel: null, store: null, pushkontak: null
+                    cpanel: [], store: [], pushkontak: []
                 };
                 const allowV8 = modeAllowV8[botMode];
                 const excludeV8 = modeExcludeV8[botMode] || [];
@@ -769,7 +753,7 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                 menuV8 += `┗━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
                 
                 menuV8 += `╭══════════════════════╮\n`;
-                menuV8 += `║  📋 *𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗟𝗜𝗦𝗧*    ║\n`;
+                menuV8 += `║  📋 *𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗟𝗜𝗦𝗧* ║\n`;
                 menuV8 += `╰══════════════════════╯\n\n`;
                 
                 for (const cat of sortedCatsV8) {
@@ -848,7 +832,6 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                 
             case 9:
                 try {
-                    const { prepareWAMessageMedia } = require('ourin');
                     const prefixV9 = botConfig.command?.prefix || '.';
                     const categoriesV9 = getCategories();
                     const cmdsByCatV9 = getCommandsByCategory();
@@ -856,8 +839,11 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                     const saluranNameV9 = botConfig.saluran?.name || botConfig.bot?.name || 'Ourin-AI';
                     const saluranLinkV9 = botConfig.saluran?.link || 'https://whatsapp.com/channel/0029VbB37bgBfxoAmAlsgE0t';
                     
-                    const { getCasesByCategory: getCasesCatV9 } = require('../../case/ourin');
-                    const casesCatV9 = getCasesCatV9();
+                    let casesCatV9 = {};
+                    try {
+                         const { getCasesByCategory: getCasesCatV9Fn } = require('../../case/ourin');
+                         casesCatV9 = getCasesCatV9Fn();
+                    } catch (e) {}
                     
                     const categoryOrderV9 = ['main', 'owner', 'utility', 'tools', 'fun', 'game', 'download', 'search', 'sticker', 'media', 'ai', 'group', 'religi', 'info', 'cek', 'economy', 'user', 'canvas', 'random', 'premium', 'ephoto', 'jpm'];
                     const allowV9 = botMode === 'md' ? null : ['main', 'group', 'sticker', 'owner', 'tools'];
@@ -891,7 +877,9 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                     let headerMediaV9 = null;
                     if (imageBuffer) {
                         try {
-                            const resizedV9 = await sharp(fs.readFileSync('./assets/images/ourin-v9.jpg'))
+                            const imgPathV9 = path.join(process.cwd(), 'assets', 'images', 'ourin-v9.jpg');
+                            const bufferV9 = fs.existsSync(imgPathV9) ? fs.readFileSync(imgPathV9) : imageBuffer;
+                            const resizedV9 = await sharp(bufferV9)
                                 .resize(300, 300, { fit: 'cover' })
                                 .jpeg({ quality: 80 })
                                 .toBuffer();
@@ -978,14 +966,12 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                 
             case 10:
                 try {
-                    const { prepareWAMessageMedia } = require('ourin');
                     const prefixV10 = botConfig.command?.prefix || '.';
                     const categoriesV10 = getCategories();
                     const cmdsByCatV10 = getCommandsByCategory();
                     const saluranIdV10 = botConfig.saluran?.id || '120363208449943317@newsletter';
                     const saluranNameV10 = botConfig.saluran?.name || botConfig.bot?.name || 'Ourin-AI';
                     const timeHelper = require('../../src/lib/timeHelper');
-                    const timeStrV10 = timeHelper.formatTime('HH:mm:ss');
                     const uptimeFmtV10 = formatUptime(uptime);
                     
                     let totalCmdV10 = 0;
@@ -993,39 +979,11 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                         totalCmdV10 += (cmdsByCatV10[cat] || []).length;
                     }
                     
-                    const { getCasesByCategory, getCaseCount } = require('../../case/ourin');
-                    const caseCats = getCasesByCategory();
-                    const caseCountV10 = getCaseCount();
-                    totalCmdV10 += caseCountV10;
-                    
-                    const categoryOrderV10 = ['main', 'owner', 'utility', 'tools', 'fun', 'game', 'download', 'search', 'sticker', 'media', 'ai', 'group', 'religi', 'info', 'cek', 'economy', 'user', 'canvas', 'random', 'premium'];
-                    const allowV10 = botMode === 'md' ? null : ['main', 'group', 'sticker', 'owner', 'tools'];
-                    const excludeV10 = ['panel', 'pushkontak', 'store'];
-                    
-                    const sortedCatsV10 = [...categoriesV10].sort((a, b) => {
-                        const indexA = categoryOrderV10.indexOf(a);
-                        const indexB = categoryOrderV10.indexOf(b);
-                        return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
-                    });
-                    
-                    const menuRowsV10 = [];
-                    for (const cat of sortedCatsV10) {
-                        if (cat === 'owner' && !m.isOwner) continue;
-                        if (allowV10 && !allowV10.includes(cat.toLowerCase())) continue;
-                        if (excludeV10.includes(cat.toLowerCase())) continue;
-                        
-                        const pluginCmds = cmdsByCatV10[cat] || [];
-                        const caseCmds = caseCats[cat] || [];
-                        const totalCmds = pluginCmds.length + caseCmds.length;
-                        if (totalCmds === 0) continue;
-                        
-                        const emojiCat = CATEGORY_EMOJIS[cat] || '📁';
-                        menuRowsV10.push({
-                            title: `${emojiCat} ${cat.toUpperCase()}`,
-                            description: `${totalCmds} commands`,
-                            id: `${m.prefix}menucat ${cat}`
-                        });
-                    }
+                    try {
+                        const { getCaseCount } = require('../../case/ourin');
+                        const caseCountV10 = getCaseCount();
+                        totalCmdV10 += caseCountV10;
+                    } catch (e) {}
                     
                     let productImageV10 = null;
                     try {
@@ -1175,6 +1133,8 @@ Klik tombol di bawah untuk menampilkan menu
         }
     } catch (error) {
         console.error('[Menu] Error on command execution:', error.message);
+        console.error(error);
+        await m.reply('Maaf, terjadi kesalahan saat menampilkan menu.');
     }
 }
 
