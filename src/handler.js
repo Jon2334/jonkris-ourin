@@ -1,21 +1,4 @@
-/**
- * Credits & Thanks to
- * Developer = Lucky Archz ( Zann )
- * Lead owner = HyuuSATAN
- * Owner = Keisya
- * Owner = Syura Salsabila
- * Designer = Danzzz
- * Wileys = Penyedia baileys
- * Penyedia API
- * Penyedia Scraper
- *
- * JANGAN HAPUS/GANTI CREDITS & THANKS TO
- * JANGAN DIJUAL YA MEK
- *
- * Saluran Resmi Ourin:
- * https://whatsapp.com/channel/0029VbB37bgBfxoAmAlsgE0t
- *
- */
+
 
 const config = require("../config");
 const { isSelf } = require("../config");
