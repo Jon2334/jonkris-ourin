@@ -1,42 +1,24 @@
-/**
- * Untuk gambar/audio/video, ada di folder 'assets'
- * 
- * Credits & Thanks to
- * Developer = Lucky Archz ( Zann )
- * Lead owner = HyuuSATAN
- * Owner = Keisya
- * Designer = Danzzz
- * Wileys = Penyedia baileys
- * Penyedia API
- * Penyedia Scraper
- * 
- * JANGAN HAPUS/GANTI CREDITS & THANKS TO
- * JANGAN DIJUAL YA MEK
- * 
- * Saluran Resmi Ourin:
- * https://whatsapp.com/channel/0029VbB37bgBfxoAmAlsgE0t 
- */
 
 const config = {
 
     info: {
-        website: 'https://sc.ourin.my.id'
+        website: 'jonsilaban.me'
     },
 
     owner: {
-        name: 'Zann',                    // Nama owner
-        number: ['62xxxxxxxxx']         // Format: 628xxx (tanpa + atau 0)
+        name: 'jonkris',                    // Nama owner
+        number: ['6289509158681']         // Format: 628xxx (tanpa + atau 0)
     },
 
     session: {
-        pairingNumber: '62xxxxxxxx',   // Nomor WA yang akan di-pair
+        pairingNumber: '62818478440',   // Nomor WA yang akan di-pair
         usePairingCode: true              // true = Pairing Code, false = QR Code
     },
 
     bot: {
-        name: '𝗢𝗨𝗥𝗜𝗡 𝗠𝗗',                 // Nama bot
+        name: 'jonkris 𝗠𝗗',                 // Nama bot
         version: '1.9.0',                 // Versi bot
-        developer: 'Zann RDZ'          // Nama developer
+        developer: 'silaban'          // Nama developer
     },
 
     mode: 'public',
