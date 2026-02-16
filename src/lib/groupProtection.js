@@ -17,7 +17,8 @@
  *
  */
 
-const { downloadMediaMessage } = require("ourin");
+// FIX: Ganti 'ourin' dengan '@whiskeysockets/baileys'
+const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 const { isLid, lidToJid } = require("./lidHelper");
 const timeHelper = require("./timeHelper");
 
@@ -120,7 +121,7 @@ async function handleAntilink(m, sock, db) {
     if (!botIsAdmin) {
       await sock.sendMessage(m.chat, {
         text:
-          `⚠️ *ᴀɴᴛɪʟɪɴᴋ*\n\n` +
+          `⚠️ *ᴀɴᴛɪᴛɪʟɪɴᴋ*\n\n` +
           `> Terdeteksi link dari\n` +
           `> @${m.sender.split("@")[0]}\n\n` +
           `❌ Bot tidak bisa menghapus pesan\n` +
@@ -141,7 +142,7 @@ async function handleAntilink(m, sock, db) {
       await sock.sendMessage(m.chat, {
         text:
           `╭━━━━━━━━━━━━━━━━━╮\n` +
-          `┃  🔗 *ᴀɴᴛɪʟɪɴᴋ ᴛʀɪɢɢᴇʀᴇᴅ*\n` +
+          `┃  🔗 *ᴀɴᴛɪᴛɪʟɪɴᴋ ᴛʀɪɢɢᴇʀᴇᴅ*\n` +
           `╰━━━━━━━━━━━━━━━━━╯\n\n` +
           `┃ 👤 *User:* @${m.sender.split("@")[0]}\n` +
           `┃ ⚡ *Action:* Kicked\n` +
@@ -170,7 +171,7 @@ async function handleAntilink(m, sock, db) {
       await sock.sendMessage(m.chat, {
         text:
           `╭━━━━━━━━━━━━━━━━━╮\n` +
-          `┃  🔗 *ᴀɴᴛɪʟɪɴᴋ ᴛʀɪɢɢᴇʀᴇᴅ*\n` +
+          `┃  🔗 *ᴀɴᴛɪᴛɪʟɪɴᴋ ᴛʀɪɢɢᴇʀᴇᴅ*\n` +
           `╰━━━━━━━━━━━━━━━━━╯\n\n` +
           `┃ 👤 *User:* @${m.sender.split("@")[0]}\n` +
           `┃ ⚡ *Action:* Pesan dihapus\n` +
