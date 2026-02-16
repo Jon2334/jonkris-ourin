@@ -13,7 +13,8 @@ const {
     DisconnectReason,
     fetchLatestBaileysVersion,
     jidDecode,
-    makeInMemoryStore
+    makeInMemoryStore,
+    delay // Tambahkan delay untuk mencegah spam reconnect
 } = Baileys;
 
 // -- SETUP STORE (SAFE MODE) --
@@ -86,14 +87,36 @@ async function startConnection(callbacks = {}) {
         if (onConnectionUpdate) await onConnectionUpdate(update, sock);
 
         if (connection === "close") {
-            const shouldReconnect = (lastDisconnect.error instanceof Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
-            logConnection("disconnected", `Reason: ${lastDisconnect.error}`);
+            // Analisa alasan putus koneksi
+            let reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
             
-            if (shouldReconnect) {
-                logger.info("Connection", "Reconnecting...");
+            // Cek jika errornya adalah konflik (biasanya string 'Stream Errored (conflict)')
+            if (lastDisconnect?.error?.message?.includes('conflict')) {
+                reason = DisconnectReason.connectionReplaced;
+            }
+
+            logConnection("disconnected", `Reason: ${lastDisconnect?.error?.message || reason}`);
+            
+            // Logika Reconnect yang Lebih Aman
+            if (reason === DisconnectReason.loggedOut) {
+                logErrorBox("Connection", "Device Logged Out. Please delete session folder and scan again.");
+                // Jangan reconnect otomatis jika logout
+            } else if (reason === DisconnectReason.connectionReplaced) {
+                // Jika konflik, tunggu lebih lama (5 detik) agar sesi lama mati dulu
+                logger.warn("Connection", "Connection Replaced (Conflict). Waiting 5s before reconnecting...");
+                await delay(5000); 
+                startConnection(callbacks);
+            } else if (reason === DisconnectReason.restartRequired) {
+                logger.info("Connection", "Restart Required. Restarting...");
+                startConnection(callbacks);
+            } else if (reason === DisconnectReason.timedOut) {
+                logger.info("Connection", "Timed Out. Reconnecting...");
                 startConnection(callbacks);
             } else {
-                logErrorBox("Connection", "Disconnected. Please delete session folder and scan again.");
+                // Untuk error lain (Stream Errored, dll), beri jeda 3 detik biar gak spam
+                logger.info("Connection", "Reconnecting in 3s...");
+                await delay(3000);
+                startConnection(callbacks);
             }
         } else if (connection === "open") {
             logConnection("connected", sock.user?.id || "Bot");
