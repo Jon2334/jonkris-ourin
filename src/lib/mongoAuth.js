@@ -7,19 +7,25 @@ const {
 
 /**
  * Skema Database untuk Sesi WhatsApp
+ * Menggunakan Compound Index agar sessionId + key bersifat unik,
+ * bukan hanya sessionId-nya saja.
  */
 const sessionSchema = new mongoose.Schema({
-    sessionId: { type: String, required: true }, // ID unik (misal: folder session / nomor HP)
-    key: { type: String, required: true },       // Nama file (creds.json, app-state, dll)
-    data: { type: Object, required: true }       // Isi data
+    sessionId: { type: String, required: true },
+    key: { type: String, required: true },
+    data: { type: Object, required: true }
 });
 
-// Hindari error compile model jika file di-load ulang
-const Session = mongoose.models.Session || mongoose.model('Session', sessionSchema);
+// Membuat index unik kombinasi (sessionId + key) untuk mencegah duplikasi data yang sama
+sessionSchema.index({ sessionId: 1, key: 1 }, { unique: true });
+
+// KITA GANTI NAMA MODEL KE 'WaSession' AGAR MEMBUAT KOLEKSI BARU
+// Ini solusi ampuh untuk error "E11000 duplicate key" tanpa perlu hapus DB manual
+const Session = mongoose.models.WaSession || mongoose.model('WaSession', sessionSchema);
 
 /**
  * Fungsi Auth State Custom untuk MongoDB
- * @param {string} sessionId - ID Sesi (misal: 'main-session' atau nomor HP jadibot)
+ * @param {string} sessionId - ID Sesi
  */
 const useMongoDBAuthState = async (sessionId) => {
     // Pastikan koneksi DB hidup
@@ -36,7 +42,7 @@ const useMongoDBAuthState = async (sessionId) => {
                 { upsert: true }
             );
         } catch (error) {
-            console.error('MongoDB Write Error:', error);
+            console.error('MongoDB Write Error:', error.message);
         }
     };
 
@@ -48,7 +54,7 @@ const useMongoDBAuthState = async (sessionId) => {
             }
             return null;
         } catch (error) {
-            console.error('MongoDB Read Error:', error);
+            console.error('MongoDB Read Error:', error.message);
             return null;
         }
     };
@@ -57,7 +63,7 @@ const useMongoDBAuthState = async (sessionId) => {
         try {
             await Session.deleteOne({ sessionId, key });
         } catch (error) {
-            console.error('MongoDB Remove Error:', error);
+            console.error('MongoDB Remove Error:', error.message);
         }
     };
 
