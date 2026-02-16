@@ -75,7 +75,7 @@ const config = {
     saluran: {
         id: '120363175366250567@newsletterp',                           // ID saluran (contoh: 120363xxx@newsletter)
         name: 'BangSilaban',       // Nama saluran
-        link: 'jonsilaban.me'                          // Link saluran
+        link: 'https://whatsapp.com/channel/0029VaCxuRM4inovZdflM83R'                          // Link saluran
     },
 
     features: {
