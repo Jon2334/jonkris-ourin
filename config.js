@@ -34,23 +34,23 @@ const config = {
 
     store: {
         payment: [
-            { name: 'Dana', number: '62xxxxxxxxx', holder: 'Nama Pemilik' },
-            { name: 'OVO', number: '62xxxxxxxxx', holder: 'Nama Pemilik' },
-            { name: 'GoPay', number: '62xxxxxxxxx', holder: 'Nama Pemilik' },
-            { name: 'ShopeePay', number: '62xxxxxxxxx', holder: 'Nama Pemilik' }
+            { name: 'Dana', number: '6289509158681', holder: 'jonkris' },
+            { name: 'OVO', number: '6289509158681', holder: 'jonkris' },
+            { name: 'GoPay', number: '6289509158681', holder: 'jonkris' },
+            { name: 'ShopeePay', number: '6289509158681', holder: 'jonkris' }
         ],
-        qris: 'https://files.cloudkuimages.guru/images/51a2c5186302.jpg'
+        qris: 'kantin-jaya.vercel.app'
     },
 
     donasi: {
         payment: [
-            { name: 'Dana', number: '08xxxxxxxxxx', holder: 'Nama Owner' },
-            { name: 'GoPay', number: '08xxxxxxxxxx', holder: 'Nama Owner' },
-            { name: 'OVO', number: '08xxxxxxxxxx', holder: 'Nama Owner' }
+            { name: 'Dana', number: '089509158681', holder: 'jonkris' },
+            { name: 'GoPay', number: '089509158681', holder: 'jonkris' },
+            { name: 'OVO', number: '089509158681', holder: 'jonkris' }
         ],
         links: [
-            { name: 'Saweria', url: 'saweria.co/username' },
-            { name: 'Trakteer', url: 'trakteer.id/username' }
+            { name: 'Saweria', url: 'jonsilaban.me' },
+            { name: 'Trakteer', url: 'kantin-jaya.vercel.app' }
         ],
         benefits: [
             'Mendukung development',
@@ -58,7 +58,7 @@ const config = {
             'Fitur baru lebih cepat',
             'Priority support'
         ],
-        qris: 'https://files.cloudkuimages.guru/images/51a2c5186302.jpg'
+        qris: 'kantin-jaya.vercel.app'
     },
 
     limits: {
@@ -68,12 +68,12 @@ const config = {
     },
 
     sticker: {
-        packname: 'Ourin-AI',             // Nama pack sticker
+        packname: 'jonkris-AI',             // Nama pack sticker
         author: 'Bot'                     // Author sticker
     },
 
     saluran: {
-        id: '120363400911374213@newsletter',                           // ID saluran (contoh: 120363xxx@newsletter)
+        id: 'kantin-jaya.vercel.app',                           // ID saluran (contoh: 120363xxx@newsletter)
         name: 'BangSilaban',       // Nama saluran
         link: 'jonsilaban.me'                          // Link saluran
     },
@@ -81,16 +81,16 @@ const config = {
     features: {
         antiSpam: true,
         antiSpamInterval: 3000,
-        antiCall: false,
+        antiCall: true,
         autoTyping: true,
         autoRead: false,
         logMessage: true,
         dailyLimitReset: true,
-        smartTriggers: false
+        smartTriggers: true
     },
 
     registration: {
-        enabled: false,
+        enabled: true,
         rewards: {
             balance: 30000,
             limit: 300,
@@ -98,8 +98,8 @@ const config = {
         }
     },
 
-    welcome: { defaultEnabled: false },
-    goodbye: { defaultEnabled: false },
+    welcome: { defaultEnabled: true },
+    goodbye: { defaultEnabled: true },
 
     premiumUsers: [],
     bannedUsers: [],
@@ -208,7 +208,7 @@ const config = {
     APIkey: {
         lolhuman: 'APIKey-Milik-Bot-OurinMD(Zann,HyuuSATANN,Keisya,Danzz)', // kalau limit habis bisa beli apikey di https://api.lolhuman.xyz/pricing
         neoxr: 'Milik-Bot-OurinMD',  // kalau limit habis bisa beli apikey di https://api.neoxr.eu/pricing
-        google: 'AIzaSyAS-KiW0SrwiYKwexeBcGPijBVHFg2R_vo' // API Key Google buat fitur nanobanana
+        google: 'AIzaSyA5CSWMWEaOBpFULduGaIpqGPHwvmppuxQ' // API Key Google buat fitur nanobanana
     }
 }
 
