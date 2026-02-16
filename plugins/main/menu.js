@@ -5,7 +5,9 @@ const { getDatabase } = require('../../src/lib/database');
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
-const { generateWAMessageFromContent, proto, prepareWAMessageMedia } = require('ourin');
+
+// FIX: Menggunakan library standar Baileys
+const { generateWAMessageFromContent, proto, prepareWAMessageMedia } = require('@whiskeysockets/baileys');
 
 /**
  * Credits & Thanks to
@@ -24,7 +26,8 @@ const { generateWAMessageFromContent, proto, prepareWAMessageMedia } = require('
 
 const pluginConfig = {
     name: 'menu',
-    alias: ['help', 'bantuan', 'commands', 'm'],
+    // FIX: Menambahkan 'menu' ke alias agar lebih pasti terdeteksi
+    alias: ['menu', 'help', 'bantuan', 'commands', 'm'],
     category: 'main',
     description: 'Menampilkan menu utama bot',
     usage: '.menu',
@@ -85,9 +88,13 @@ function buildMenuText(m, botConfig, db, uptime, botMode = 'md') {
     let totalCases = 0;
     let casesByCategory = {};
     try {
-        const { getCaseCount, getCasesByCategory } = require('../../case/ourin');
-        totalCases = getCaseCount();
-        casesByCategory = getCasesByCategory();
+        // Safe require untuk case handler
+        const casePath = '../../case/ourin';
+        if (fs.existsSync(path.resolve(__dirname, casePath + '.js'))) {
+            const { getCaseCount, getCasesByCategory } = require(casePath);
+            totalCases = getCaseCount();
+            casesByCategory = getCasesByCategory();
+        }
     } catch (e) {
         // Fallback if case handler not found
     }
@@ -145,14 +152,18 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
     };
     
     try {
-        const botmodePlugin = require('../group/botmode');
-        if (botmodePlugin && botmodePlugin.MODES) {
-            const modes = botmodePlugin.MODES;
-            modeAllowedMap = {};
-            modeExcludeMap = {};
-            for (const [key, val] of Object.entries(modes)) {
-                modeAllowedMap[key] = val.allowedCategories;
-                modeExcludeMap[key] = val.excludeCategories;
+        // Safe require untuk botmode
+        const botModePath = '../group/botmode';
+        if (fs.existsSync(path.resolve(__dirname, botModePath + '.js'))) {
+            const botmodePlugin = require(botModePath);
+            if (botmodePlugin && botmodePlugin.MODES) {
+                const modes = botmodePlugin.MODES;
+                modeAllowedMap = {};
+                modeExcludeMap = {};
+                for (const [key, val] of Object.entries(modes)) {
+                    modeAllowedMap[key] = val.allowedCategories;
+                    modeExcludeMap[key] = val.excludeCategories;
+                }
             }
         }
     } catch (e) {}
@@ -841,8 +852,12 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                     
                     let casesCatV9 = {};
                     try {
-                         const { getCasesByCategory: getCasesCatV9Fn } = require('../../case/ourin');
-                         casesCatV9 = getCasesCatV9Fn();
+                         // Safe require untuk case
+                         const casePathV9 = '../../case/ourin';
+                         if (fs.existsSync(path.resolve(__dirname, casePathV9 + '.js'))) {
+                             const { getCasesByCategory: getCasesCatV9Fn } = require(casePathV9);
+                             casesCatV9 = getCasesCatV9Fn();
+                         }
                     } catch (e) {}
                     
                     const categoryOrderV9 = ['main', 'owner', 'utility', 'tools', 'fun', 'game', 'download', 'search', 'sticker', 'media', 'ai', 'group', 'religi', 'info', 'cek', 'economy', 'user', 'canvas', 'random', 'premium', 'ephoto', 'jpm'];
@@ -980,9 +995,13 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                     }
                     
                     try {
-                        const { getCaseCount } = require('../../case/ourin');
-                        const caseCountV10 = getCaseCount();
-                        totalCmdV10 += caseCountV10;
+                        // Safe require untuk case count
+                        const casePathV10 = '../../case/ourin';
+                         if (fs.existsSync(path.resolve(__dirname, casePathV10 + '.js'))) {
+                            const { getCaseCount } = require(casePathV10);
+                            const caseCountV10 = getCaseCount();
+                            totalCmdV10 += caseCountV10;
+                         }
                     } catch (e) {}
                     
                     let productImageV10 = null;
