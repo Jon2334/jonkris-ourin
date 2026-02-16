@@ -294,11 +294,19 @@ async function main() {
   logger.success("Scheduler ready!");
   const bootTime = Date.now() - startTime;
   logger.info("Boot time", `${bootTime}ms`);
+ // ... kode sebelumnya ...
   divider();
   logger.system("Connecting to WhatsApp...");
   console.log("");
+
+  // Pastikan startConnection adalah fungsi sebelum dipanggil
+  if (typeof startConnection !== 'function') {
+    throw new Error("startConnection bukan sebuah fungsi! Periksa module.exports di src/connection.js");
+  }
+
   await startConnection({
     onRawMessage: async (msg, sock) => {
+// ... kode setelahnya ...
       try {
         const db = getDatabase();
         await handleAntiTagSW(msg, sock, db);

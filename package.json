@@ -22,9 +22,9 @@
     "node": "18.x"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "^6.7.9",
     "@adiwajshing/keyed-db": "^0.2.4",
     "@bochilteam/scraper": "^4.2.4",
+    "@whiskeysockets/baileys": "^6.7.9",
     "awesome-phonenumber": "^2.64.0",
     "axios": "^1.6.0",
     "chalk": "^4.1.2",
@@ -44,7 +44,7 @@
     "jimp": "^0.16.1",
     "jsdom": "^16.4.0",
     "lodash": "^4.17.21",
-    "lowdb": "^2.1.0",
+    "lowdb": "^1.0.0",
     "moment-timezone": "^0.5.34",
     "mongoose": "^6.2.1",
     "node-fetch": "^2.6.1",
@@ -60,8 +60,7 @@
     "sharp": "^0.32.6",
     "util": "^0.12.4",
     "yargs": "^17.2.1",
-    "yt-search": "^2.10.3",
-    "lowdb": "^1.0.0"
+    "yt-search": "^2.10.3"
   },
   "directories": {
     "lib": "lib",
