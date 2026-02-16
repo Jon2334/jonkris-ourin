@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const axios = require('axios')
 
-const DEFAULT_AVATAR = 'https://i.imgur.com/TuItj4L.png'
+const DEFAULT_AVATAR = 'https://survivingchurch.org/wp-content/uploads/2017/10/welcome-1.jpg'
 
 function drawRoundedRect(ctx, x, y, width, height, radius) {
     ctx.beginPath()
