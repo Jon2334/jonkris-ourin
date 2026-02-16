@@ -1,20 +1,26 @@
 require('../config')
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, makeInMemoryStore, jidDecode, proto } = require("@whiskeysockets/baileys")
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, jidDecode, proto } = require("@whiskeysockets/baileys")
 const pino = require('pino')
 const { Boom } = require('@hapi/boom')
 const fs = require('fs')
 const path = require('path')
 
-// Gunakan path.join untuk memastikan path absolute yang benar di semua OS
-const libPath = path.join(__dirname, '../lib')
+// PERBAIKAN PATH: Folder 'lib' ada di dalam 'src' (sejajar dengan file ini)
+// Jadi tidak perlu mundur (../), cukup langsung ('lib')
+const libPath = path.join(__dirname, 'lib') 
+
+// Load library dari folder src/lib/
 const { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = require(path.join(libPath, 'myfunc'))
-const { color } = require(path.join(libPath, 'color'))
+
+// Perbaikan nama file: di file list namanya 'colors.js', bukan 'color.js'
+const { color } = require(path.join(libPath, 'colors'))
 
 const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) })
 
 async function startOurin() {
-    // Pastikan folder session ada
+    // Session path tetap ditaruh di root (../session) agar rapi
     const sessionPath = path.join(__dirname, '../session')
+    
     if (!fs.existsSync(sessionPath)) {
         fs.mkdirSync(sessionPath, { recursive: true })
     }
@@ -51,7 +57,7 @@ async function startOurin() {
             if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
             m = smsg(ourin, mek, store)
             
-            // Fix path require untuk case handler
+            // Path ke case/ourin.js -> Folder 'case' ada di root (../case)
             const casePath = path.join(__dirname, '../case/ourin')
             require(casePath)(ourin, m, chatUpdate, store)
         } catch (err) {
