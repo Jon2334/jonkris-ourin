@@ -2,7 +2,7 @@ const { getUptime } = require('./lib/functions');
 const config = require("../config");
 const { isSelf } = require("../config");
 const { serialize } = require("./lib/serialize");
-const fs = require("fs"); 
+const fs = require("fs"); // Pindahkan fs ke atas
 const {
   getPlugin,
   getPluginCount,
@@ -20,7 +20,9 @@ const {
   createErrorMessage,
 } = require("./lib/formatter");
 
+// --- PERBAIKAN UTAMA: HANYA IMPORT startConnection ---
 const { startConnection } = require("./connection"); 
+// -----------------------------------------------------
 
 const { logger, logMessage, logCommand, c } = require("./lib/colors");
 const {
@@ -53,11 +55,6 @@ const {
 const { getActiveJadibots } = require("./lib/jadibotManager");
 const { handleCommand: handleCaseCommand } = require("../case/ourin");
 
-// --- KONFIGURASI ID SALURAN (GANTI SEKALI DI SINI) ---
-const DEFAULT_SALURAN_ID = "120363175366250567@newsletter";
-const DEFAULT_SALURAN_NAME = "Ourin-AI";
-// -----------------------------------------------------
-
 let checkAfk = null;
 let isMuted = null;
 let checkSpam = null;
@@ -68,8 +65,10 @@ let checkLevelUp = null;
 let incrementChatCount = null;
 let checkStickerCommand = null;
 
+// Antispam delay tracker
 const spamDelayTracker = new Map();
 
+// Load optional modules safely
 try { checkAfk = require("../plugins/group/afk").checkAfk; } catch (e) {}
 try { isMuted = require("../plugins/group/mute").isMuted; } catch (e) {}
 try {
@@ -188,9 +187,8 @@ async function handleSmartTriggers(m, sock, db) {
   const globalSmartTriggers = db.setting("smartTriggers") ?? config.features?.smartTriggers ?? false;
 
   try {
-    // Gunakan Variabel Global di sini
-    const saluranId = config.saluran?.id || DEFAULT_SALURAN_ID;
-    const saluranName = config.saluran?.name || config.bot?.name || DEFAULT_SALURAN_NAME;
+    const saluranId = config.saluran?.id || "120363208449943317@newsletter";
+    const saluranName = config.saluran?.name || config.bot?.name || "Ourin-AI";
     const botName = config.bot?.name || "Ourin-AI";
 
     let isAutoreplyEnabled = globalSmartTriggers;
@@ -552,23 +550,6 @@ async function messageHandler(msg, sock, options = {}) {
 
     if (!m) return;
     if (!m.message) return;
-
-    // --- [MULAI] KODE PENCARI ID SALURAN ---
-    try {
-      const contextInfo = m.message?.extendedTextMessage?.contextInfo;
-      if (contextInfo?.forwardedNewsletterMessageInfo) {
-        const { newsletterJid, newsletterName } = contextInfo.forwardedNewsletterMessageInfo;
-        
-        console.log(`\n[CHANNEL DETECTED] Name: ${newsletterName} | ID: ${newsletterJid}\n`);
-        
-        if (m.isOwner || m.fromMe) {
-           await sock.sendMessage(m.chat, { 
-               text: `📡 *INFO SALURAN*\n\n📛 Nama: ${newsletterName}\n🆔 ID: \`${newsletterJid}\`` 
-           }, { quoted: m });
-        }
-      }
-    } catch (e) {}
-    // --- [SELESAI] KODE PENCARI ID SALURAN ---
 
     if (m.message?.stickerPackMessage && sock.saveStickerPack) {
       try {
@@ -1073,9 +1054,8 @@ async function messageHandler(msg, sock, options = {}) {
               isForwarded: true,
               forwardingScore: 9999,
               forwardedNewsletterMessageInfo: {
-                // GUNAKAN KONSTANTA GLOBAL
-                newsletterJid: config.saluran?.id || DEFAULT_SALURAN_ID,
-                newsletterName: config.saluran?.name || DEFAULT_SALURAN_NAME,
+                newsletterJid: config.saluran?.id,
+                newsletterName: config.saluran?.name,
               },
               externalAdReply: {
                 title: "4 0 4  - N O T  F O U N D",
@@ -1425,9 +1405,9 @@ async function groupHandler(update, sock) {
         await sendGoodbyeMessage(sock, groupJid, participant, groupMeta);
       }
 
-      // GUNAKAN KONSTANTA GLOBAL
-      const saluranId = config.saluran?.id || DEFAULT_SALURAN_ID;
-      const saluranName = config.saluran?.name || config.bot?.name || DEFAULT_SALURAN_NAME;
+      const saluranId = config.saluran?.id || "120363208449943317@newsletter";
+      const saluranName =
+        config.saluran?.name || config.bot?.name || "Ourin-AI";
 
       let groupPpUrl = "https://files.catbox.moe/w4e75f.jpg";
       try {
@@ -1566,9 +1546,9 @@ async function groupSettingsHandler(update, sock) {
         const db = getDatabase();
         const groupData = db.getGroup(groupId) || {};
 
-        // GUNAKAN KONSTANTA GLOBAL
-        const saluranId = config.saluran?.id || DEFAULT_SALURAN_ID;
-        const saluranName = config.saluran?.name || config.bot?.name || DEFAULT_SALURAN_NAME;
+        const saluranId = config.saluran?.id || "120363208449943317@newsletter";
+        const saluranName =
+          config.saluran?.name || config.bot?.name || "Ourin-AI";
 
         if (update.announce === true && groupData.notifCloseGroup === true) {
           await sock.sendMessage(groupId, {
@@ -1624,9 +1604,10 @@ async function groupSettingsHandler(update, sock) {
         cached.restrict = update.restrict;
       } else if (cached.restrict !== update.restrict) {
         hasRealChange = true;
-        // GUNAKAN KONSTANTA GLOBAL
-        const saluranIdR = config.saluran?.id || DEFAULT_SALURAN_ID;
-        const saluranNameR = config.saluran?.name || config.bot?.name || DEFAULT_SALURAN_NAME;
+        const saluranIdR =
+          config.saluran?.id || "120363208449943317@newsletter";
+        const saluranNameR =
+          config.saluran?.name || config.bot?.name || "Ourin-AI";
 
         if (update.restrict === true) {
           await sock.sendMessage(groupId, {
