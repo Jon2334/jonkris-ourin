@@ -38,6 +38,7 @@
     "fs-extra": "^10.0.0",
     "google-it": "^1.6.2",
     "got": "^11.8.3",
+    "gradient-string": "^2.0.0",
     "human-readable": "^0.2.1",
     "jimp": "^0.16.1",
     "jsdom": "^16.4.0",
@@ -54,6 +55,7 @@
     "qrcode-terminal": "^0.12.0",
     "request": "^2.88.2",
     "rimraf": "^3.0.2",
+    "sharp": "^0.32.6",
     "util": "^0.12.4",
     "yargs": "^17.2.1",
     "yt-search": "^2.10.3"
