@@ -54,7 +54,7 @@
     "path": "^0.12.7",
     "perf_hooks": "^0.0.1",
     "pino": "^7.0.5",
-    "qrcode": "^1.5.3",
+    "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "request": "^2.88.2",
     "rimraf": "^3.0.2",
