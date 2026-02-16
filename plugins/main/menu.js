@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
 
-// FIX: Menggunakan library standar Baileys
+// FIX: Menggunakan library standar Baileys, bukan 'ourin'
 const { generateWAMessageFromContent, proto, prepareWAMessageMedia } = require('@whiskeysockets/baileys');
 
 /**
