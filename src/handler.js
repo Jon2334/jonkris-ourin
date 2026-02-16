@@ -19,7 +19,8 @@ const {
   createWaitMessage,
   createErrorMessage,
 } = require("./lib/formatter");
-const { getUptime } = require("./connection");
+// Hapus getUptime dari sini karena sudah ada di import functions
+const { startConnection } = require("./connection");
 const { logger, logMessage, logCommand, c } = require("./lib/colors");
 const {
   isLid,
