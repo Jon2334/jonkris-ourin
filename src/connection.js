@@ -5,6 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const qrcode = require("qrcode-terminal");
 const { logger, logConnection, logErrorBox } = require("./lib/colors");
+const { useMongoDBAuthState } = require("./lib/mongoAuth");
 
 // -- IMPORTS & DEFINITIONS --
 const makeWASocket = Baileys.default;
@@ -56,8 +57,29 @@ async function startConnection(callbacks = {}) {
         fs.mkdirSync(sessionDir, { recursive: true });
     }
 
-    // Mengelola folder sesi (auth)
-    const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
+    // Mengelola folder sesi (auth) - Support MongoDB & Local
+    let state, saveCreds;
+    
+    // Cek apakah MONGODB_URI didefinisikan dan useMongoDBAuthState berhasil diimport
+    if (process.env.MONGODB_URI) {
+        try {
+            logger.info("Connection", "Using MongoDB Session");
+            const auth = await useMongoDBAuthState('session-utama');
+            state = auth.state;
+            saveCreds = auth.saveCreds;
+        } catch (error) {
+            logger.warn("Connection", `MongoDB Error: ${error.message}. Fallback to local session.`);
+            const auth = await useMultiFileAuthState(sessionDir);
+            state = auth.state;
+            saveCreds = auth.saveCreds;
+        }
+    } else {
+        logger.info("Connection", "Using Local File Session");
+        const auth = await useMultiFileAuthState(sessionDir);
+        state = auth.state;
+        saveCreds = auth.saveCreds;
+    }
+
     const { version, isLatest } = await fetchLatestBaileysVersion();
 
     const sock = makeWASocket({

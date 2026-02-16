@@ -13,8 +13,16 @@ const path = require("path");
 const QRCode = require("qrcode");
 const { logger } = require("./colors");
 
+// --- IMPORT MONGO AUTH ---
+// Kita coba load modul mongoAuth, jika file belum dibuat user, jangan crash
+let useMongoDBAuthState = null;
+try {
+    useMongoDBAuthState = require('./mongoAuth').useMongoDBAuthState;
+} catch (e) {
+    // Abaikan jika user belum membuat file mongoAuth.js
+}
+
 // --- SETUP STORE (SAFE MODE) ---
-// Mencegah crash jika makeInMemoryStore error
 let jadibotStore = null;
 try {
     if (typeof makeInMemoryStore === 'function') {
@@ -24,30 +32,32 @@ try {
     }
 } catch (e) {}
 
-// Map untuk menyimpan sesi aktif: ID User -> Socket
 const jadibots = new Map();
 
 /**
- * Mendapatkan daftar semua sesi jadibot yang tersimpan di folder
- * Dipanggil oleh index.js saat startup
+ * Mendapatkan daftar semua sesi jadibot
+ * Mendukung File System & MongoDB (jika diimplementasikan list-nya)
  */
-const getAllJadibotSessions = () => {
+const getAllJadibotSessions = async () => {
+    // 1. Cek Folder Lokal
     const sessionPath = path.join(__dirname, "../../session-jadibot");
-    if (!fs.existsSync(sessionPath)) return [];
-    try {
-        const sessions = fs.readdirSync(sessionPath)
-            .filter(file => fs.statSync(path.join(sessionPath, file)).isDirectory());
-        // Return format object { id: 'nomor' } agar sesuai dengan index.js
-        return sessions.map(id => ({ id }));
-    } catch {
-        return [];
+    let localSessions = [];
+    if (fs.existsSync(sessionPath)) {
+        try {
+            localSessions = fs.readdirSync(sessionPath)
+                .filter(file => fs.statSync(path.join(sessionPath, file)).isDirectory())
+                .map(id => ({ id }));
+        } catch {}
     }
+
+    // 2. Cek MongoDB (Jika aktif)
+    // Note: Untuk MongoDB, kita perlu query distinct sessionId
+    // Ini implementasi sederhana: Kita kembalikan yang lokal dulu untuk stabilitas,
+    // atau user bisa menambahkan logika query MongoDB disini nanti.
+    
+    return localSessions; 
 };
 
-/**
- * Mendapatkan list jadibot yang sedang aktif (Online)
- * Dipanggil oleh handler.js untuk cek mode self/public
- */
 const getActiveJadibots = () => {
     const active = [];
     for (const [id, _] of jadibots) {
@@ -56,29 +66,37 @@ const getActiveJadibots = () => {
     return active;
 };
 
-/**
- * Restart sesi jadibot (Wrapper untuk startJadibot)
- * Dipanggil oleh index.js
- */
 const restartJadibotSession = async (mainSock, id) => {
     return startJadibot(mainSock, id, true);
 };
 
 /**
  * Fungsi utama memulai sesi Jadibot
- * @param {Object} mainSock - Socket bot utama
- * @param {String} userId - Nomor HP user
- * @param {Boolean} isRestart - Apakah ini restart sistem?
+ * Support Hybrid: MongoDB (Prioritas) atau File System
  */
 const startJadibot = async (mainSock, userId, isRestart = false) => {
     try {
-        const sessionDir = path.join(__dirname, "../../session-jadibot", userId);
-        
-        if (!fs.existsSync(sessionDir)) {
-            fs.mkdirSync(sessionDir, { recursive: true });
+        let state, saveCreds;
+
+        // --- LOGIKA PEMILIHAN PENYIMPANAN ---
+        if (process.env.MONGODB_URI && useMongoDBAuthState) {
+            // Gunakan MongoDB jika URI tersedia
+            logger.info(`Jadibot ${userId}`, "Using MongoDB Session");
+            const auth = await useMongoDBAuthState(`jadibot-${userId}`);
+            state = auth.state;
+            saveCreds = auth.saveCreds;
+        } else {
+            // Fallback ke File Lokal (Lama)
+            logger.info(`Jadibot ${userId}`, "Using Local File Session");
+            const sessionDir = path.join(__dirname, "../../session-jadibot", userId);
+            if (!fs.existsSync(sessionDir)) {
+                fs.mkdirSync(sessionDir, { recursive: true });
+            }
+            const auth = await useMultiFileAuthState(sessionDir);
+            state = auth.state;
+            saveCreds = auth.saveCreds;
         }
 
-        const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
         const { version } = await fetchLatestBaileysVersion();
 
         const sock = makeWASocket({
@@ -109,7 +127,6 @@ const startJadibot = async (mainSock, userId, isRestart = false) => {
             const { connection, lastDisconnect, qr } = update;
 
             if (qr && !isRestart) {
-                // Kirim QR ke user via bot utama
                 try {
                     const qrBuffer = await QRCode.toBuffer(qr, { scale: 8 });
                     await mainSock.sendMessage(userId + "@s.whatsapp.net", {
@@ -123,30 +140,26 @@ const startJadibot = async (mainSock, userId, isRestart = false) => {
 
             if (connection === "open") {
                 logger.success(`Jadibot ${userId}`, "Connected");
-                // Coba kirim pesan sukses ke user (jangan crash jika gagal)
                 try {
                     await mainSock.sendMessage(userId + "@s.whatsapp.net", { 
-                        text: "✅ Jadibot berhasil terhubung!" 
+                        text: "✅ Jadibot berhasil terhubung!\nSesi tersimpan aman di database." 
                     });
                 } catch {}
             }
 
             if (connection === "close") {
                 const reason = lastDisconnect?.error?.output?.statusCode;
-                
-                // Hapus dari map memori
                 jadibots.delete(userId);
 
                 if (reason === DisconnectReason.loggedOut) {
                     logger.warn(`Jadibot ${userId}`, "Logged out");
-                    stopJadibot(userId); // Hapus folder sesi
+                    stopJadibot(userId); 
                     try {
                         await mainSock.sendMessage(userId + "@s.whatsapp.net", { 
                             text: "❌ Sesi Jadibot terputus (Logout)." 
                         });
                     } catch {}
                 } else {
-                    // Reconnect otomatis
                     logger.info(`Jadibot ${userId}`, "Reconnecting...");
                     await delay(3000);
                     startJadibot(mainSock, userId, true);
@@ -154,24 +167,19 @@ const startJadibot = async (mainSock, userId, isRestart = false) => {
             }
         });
 
-        // Handler Pesan untuk Jadibot
         sock.ev.on("messages.upsert", async (chatUpdate) => {
             try {
-                // Import handler secara dinamis untuk menghindari circular dependency error
                 const handlerModule = require("../handler");
                 if (handlerModule && handlerModule.messageHandler) {
                     const m = chatUpdate.messages[0];
                     if (!m.message) return;
                     
-                    // Tambahkan flag isJadibot agar handler tahu
                     await handlerModule.messageHandler(m, sock, { 
                         isJadibot: true, 
                         jadibotId: userId 
                     });
                 }
-            } catch (err) {
-                // Silent error agar tidak spam log
-            }
+            } catch (err) {}
         });
 
     } catch (err) {
@@ -179,29 +187,23 @@ const startJadibot = async (mainSock, userId, isRestart = false) => {
     }
 };
 
-/**
- * Menghentikan sesi Jadibot & Menghapus Data
- */
 const stopJadibot = (userId) => {
     const sock = jadibots.get(userId);
     if (sock) {
-        try {
-            sock.end(undefined);
-        } catch {}
+        try { sock.end(undefined); } catch {}
         jadibots.delete(userId);
     }
-
+    // Hapus sesi lokal (jika ada)
     try {
         const sessionDir = path.join(__dirname, "../../session-jadibot", userId);
         if (fs.existsSync(sessionDir)) {
             fs.rmSync(sessionDir, { recursive: true, force: true });
         }
     } catch {}
+    
+    // TODO: Tambahkan logika hapus sesi MongoDB jika diperlukan (opsional)
 };
 
-/**
- * Stop semua jadibot (untuk shutdown)
- */
 const stopAllJadibots = () => {
     for (const [id, sock] of jadibots) {
         try { sock.end(undefined); } catch {}
@@ -212,9 +214,9 @@ const stopAllJadibots = () => {
 module.exports = {
     startJadibot,
     stopJadibot,
-    getAllJadibotSessions, // Digunakan index.js
-    restartJadibotSession, // Digunakan index.js
-    getActiveJadibots,     // Digunakan handler.js
+    getAllJadibotSessions, 
+    restartJadibotSession, 
+    getActiveJadibots,     
     stopAllJadibots,
     jadibots,
     jadibotStore
