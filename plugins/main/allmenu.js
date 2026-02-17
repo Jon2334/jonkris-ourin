@@ -1,11 +1,10 @@
 const config = require('../../config')
 const { formatUptime, getTimeGreeting } = require('../../src/lib/formatter')
-const { getCommandsByCategory, getCategories, getPluginCount } = require('../../src/lib/plugins')
-const { getDatabase } = require('../../src/lib/database')
+const { getCommandsByCategory, getCategories } = require('../../src/lib/plugins')
 const { getCasesByCategory, getCaseCount } = require('../../case/ourin')
 const fs = require('fs')
 const path = require('path')
-const sharp = require('sharp')
+const moment = require('moment-timezone')
 
 const pluginConfig = {
     name: 'allmenu',
@@ -32,7 +31,9 @@ const CATEGORY_EMOJIS = {
     cek: '📋', ephoto: '🎨', jpm: '📢', pushkontak: '📱'
 }
 
+// Fungsi proteksi string agar tidak null/undefined
 function toSmallCaps(text) {
+    if (!text || typeof text !== 'string') return '';
     const smallCaps = {
         'a': 'ᴀ', 'b': 'ʙ', 'c': 'ᴄ', 'd': 'ᴅ', 'e': 'ᴇ', 'f': 'ꜰ', 'g': 'ɢ',
         'h': 'ʜ', 'i': 'ɪ', 'j': 'ᴊ', 'k': 'ᴋ', 'l': 'ʟ', 'm': 'ᴍ', 'n': 'ɴ',
@@ -42,26 +43,33 @@ function toSmallCaps(text) {
     return text.toLowerCase().split('').map(c => smallCaps[c] || c).join('')
 }
 
-function getContextInfo(botConfig, m, thumbBuffer) {
+function getContextInfo(botConfig, m) {
     const saluranId = botConfig.saluran?.id || '120363208449943317@newsletter'
-    const saluranName = botConfig.saluran?.name || botConfig.bot?.name || 'Ourin-AI'
-    const saluranLink = botConfig.saluran?.link || ''
+    const saluranName = botConfig.saluran?.name || 'Ourin-AI Official'
     
     return {
         mentionedJid: [m.sender],
-        forwardingScore: 9999,
+        forwardingScore: 999,
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
             newsletterJid: saluranId,
             newsletterName: saluranName,
             serverMessageId: 127
         },
+        externalAdReply: {
+            title: `Ourin-AI Full Menu`,
+            body: `Status: Online | Multi Device`,
+            thumbnailUrl: `https://telegra.ph/file/0d429f2e958e66025438d.jpg`,
+            sourceUrl: botConfig.saluran?.link || '',
+            mediaType: 1,
+            renderLargerThumbnail: true
+        }
     }
 }
 
 async function handler(m, { sock, config: botConfig, db, uptime }) {
     const prefix = botConfig.command?.prefix || '.'
-    const user = db.getUser(m.sender)
+    const user = db.getUser(m.sender) || { limit: 25 }
     const groupData = m.isGroup ? (db.getGroup(m.chat) || {}) : {}
     const botMode = groupData.botMode || 'md'
     
@@ -83,30 +91,21 @@ async function handler(m, { sock, config: botConfig, db, uptime }) {
     const greeting = getTimeGreeting()
     const uptimeFormatted = formatUptime(uptime)
     const totalUsers = db.getUserCount()
-    const greetEmoji = greeting.includes('pagi') ? '🌅' : greeting.includes('siang') ? '☀️' : greeting.includes('sore') ? '🌇' : '🌙'
     
-    let txt = `Hai *@${m.pushName || "User"}* 🪸
-Aku ${botConfig.bot?.name || 'Ourin-AI'}, bot WhatsApp yang siap bantu kamu.  
-
-Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana langsung lewat WhatsApp — praktis tanpa ribet.
-
-`
+    let txt = `Hai *@${m.pushName || "User"}* 🪸\n`
+    txt += `Aku *${botConfig.bot?.name || 'Ourin-AI'}*, bot WhatsApp yang siap membantu kamu.\n\n`
 
     txt += `— 🤖 *ʙᴏᴛ ɪɴꜰᴏ* 」\n`
-    txt += `\`◦\` ɴᴀᴍᴀ: *${botConfig.bot?.name || 'Ourin-AI'}*\n`
     txt += `\`◦\` ᴠᴇʀsɪ: *v${botConfig.bot?.version || '1.9.0'}*\n`
     txt += `\`◦\` ᴍᴏᴅᴇ: *${(botConfig.mode || 'public').toUpperCase()}*\n`
     txt += `\`◦\` ᴘʀᴇꜰɪx: *[ ${prefix} ]*\n`
     txt += `\`◦\` ᴜᴘᴛɪᴍᴇ: *${uptimeFormatted}*\n`
     txt += `\`◦\` ᴛᴏᴛᴀʟ ᴜsᴇʀ: *${totalUsers}*\n`
-    txt += `\`◦\` ꜰɪᴛᴜʀ ᴘʟᴜɢɪɴ: *${totalCommands}*\n`
-    txt += `\`◦\` ꜰɪᴛᴜʀ ᴄᴀsᴇ: *${totalCases}*\n`
     txt += `\`◦\` ᴛᴏᴛᴀʟ ꜰɪᴛᴜʀ: *${totalFeatures}*\n\n`
     
     txt += `— 👤 *ᴜsᴇʀ ɪɴꜰᴏ* 」\n`
-    txt += `\`◦\` ɴᴀᴍᴀ: *${m.pushName}*\n`
     txt += `\`◦\` ʀᴏʟᴇ: *${roleEmoji} ${userRole}*\n`
-    txt += `\`◦\` ʟɪᴍɪᴛ: *${m.isOwner || m.isPremium ? '∞ Unlimited' : (user?.limit ?? 25)}*\n\n`
+    txt += `\`◦\` ʟɪᴍɪᴛ: *${m.isOwner || m.isPremium ? '∞ Unlimited' : (user.limit)}*\n\n`
     
     const categoryOrder = ['owner', 'main', 'utility', 'tools', 'fun', 'game', 'download', 'search', 'sticker', 'media', 'ai', 'group', 'religi', 'info', 'cek', 'economy', 'user', 'canvas', 'random', 'premium']
     const sortedCategories = [...categories].sort((a, b) => {
@@ -115,42 +114,18 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
         return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB)
     })
     
-    let modeAllowedMap = {
-        md: null,
-        store: ['main', 'group', 'sticker', 'owner', 'store'],
-        pushkontak: ['main', 'group', 'sticker', 'owner', 'pushkontak']
-    }
-    let modeExcludeMap = {
-        md: ['panel', 'pushkontak', 'store'],
-        store: null,
-        pushkontak: null
-    }
-    
-    try {
-        const botmodePlugin = require('../group/botmode')
-        if (botmodePlugin && botmodePlugin.MODES) {
-            const modes = botmodePlugin.MODES
-            modeAllowedMap = {}
-            modeExcludeMap = {}
-            for (const [key, val] of Object.entries(modes)) {
-                modeAllowedMap[key] = val.allowedCategories
-                modeExcludeMap[key] = val.excludeCategories
-            }
-        }
-    } catch (e) {}
-    
-    const allowedCategories = modeAllowedMap[botMode]
-    const excludeCategories = modeExcludeMap[botMode] || []
-    
+    // Filter kategori berdasarkan mode bot
     for (const category of sortedCategories) {
         if (category === 'owner' && !m.isOwner) continue
         
-        if (allowedCategories && !allowedCategories.includes(category.toLowerCase())) continue
-        if (excludeCategories && excludeCategories.includes(category.toLowerCase())) continue
-        
+        // MD Mode exclude
+        if (botMode === 'md' && ['panel', 'pushkontak', 'store'].includes(category)) continue
+        if (botMode === 'store' && !['main', 'group', 'sticker', 'owner', 'store'].includes(category)) continue
+
         const pluginCmds = commandsByCategory[category] || []
         const caseCmds = casesByCategory[category] || []
-        const allCmds = [...pluginCmds, ...caseCmds]
+        const allCmds = [...new Set([...pluginCmds, ...caseCmds])].filter(c => c) // Hapus duplikat & null
+        
         if (allCmds.length === 0) continue
         
         const emoji = CATEGORY_EMOJIS[category] || '📋'
@@ -158,39 +133,39 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
         
         txt += `╭┈┈⬡「 ${emoji} *${categoryName}* 」\n`
         for (const cmd of allCmds) {
-            txt += `┃ ◦ *${prefix}${toSmallCaps(cmd)}*\n`
+            txt += `┃ ◦ *${prefix}${cmd}*\n`
         }
         txt += `╰┈┈┈┈┈┈┈┈⬡\n\n`
     }
     
-    txt += `_© ${botConfig.bot?.name || 'Ourin-AI'} | ${require('moment-timezone')().tz('Asia/Jakarta').year()}_\n`
+    txt += `_© ${botConfig.bot?.name || 'Ourin-AI'} | ${moment().tz('Asia/Jakarta').format('YYYY')}_\n`
     txt += `_ᴅᴇᴠᴇʟᴏᴘᴇʀ: ${botConfig.bot?.developer || 'Lucky Archz'}_`
     
-    const imagePath = path.join(process.cwd(), 'assets', 'images', 'ourin.jpg')
-    const thumbPath = path.join(process.cwd(), 'assets', 'images', 'ourin2.jpg')
+    // Handler Gambar dengan Fallback
+    const imagePath = path.join(process.cwd(), 'assets', 'images', 'ourin-allmenu.jpg')
+    const fallbackPath = path.join(process.cwd(), 'assets', 'images', 'ourin.jpg')
     
-    let imageBuffer = fs.existsSync(imagePath) ? fs.readFileSync(imagePath) : null
-    let thumbBuffer = fs.existsSync(thumbPath) ? fs.readFileSync(thumbPath) : null
-    
+    let menuImage;
+    if (fs.existsSync(imagePath)) {
+        menuImage = fs.readFileSync(imagePath)
+    } else if (fs.existsSync(fallbackPath)) {
+        menuImage = fs.readFileSync(fallbackPath)
+    }
+
     try {
- 
-        await sock.sendMessage(m.chat, {
-            image: fs.readFileSync(`./assets/images/ourin-allmenu.jpg`),
-            caption: txt,
-            contextInfo: getContextInfo(botConfig, m)
-        }, { quoted: m })
-        
-    } catch (error) {
-        console.error('[AllMenu] Error:', error.message)
-        if (imageBuffer) {
+        if (menuImage) {
             await sock.sendMessage(m.chat, {
-                image: imageBuffer,
+                image: menuImage,
                 caption: txt,
+                mentions: [m.sender],
                 contextInfo: getContextInfo(botConfig, m)
             }, { quoted: m })
         } else {
             await m.reply(txt)
         }
+    } catch (error) {
+        console.error('[AllMenu] Send Error:', error.message)
+        await m.reply(txt)
     }
 }
 
