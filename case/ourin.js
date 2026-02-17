@@ -133,7 +133,7 @@ async function handleCommand(m, sock) {
                             forwardingScore: 9999,
                             isForwarded: true,
                             forwardedNewsletterMessageInfo: {
-                                newsletterJid: '120363208449943317@newsletter',
+                                newsletterJid: '120363175366250567@newsletterp',
                                 newsletterName: 'Ourin Case System',
                                 serverMessageId: 127
                             }
@@ -215,7 +215,7 @@ async function handleCommand(m, sock) {
                             forwardingScore: 9999,
                             isForwarded: true,
                             forwardedNewsletterMessageInfo: {
-                                newsletterJid: '120363208449943317@newsletter',
+                                newsletterJid: '120363175366250567@newsletterp',
                                 newsletterName: 'Ourin Plugin System',
                                 serverMessageId: 127
                             }

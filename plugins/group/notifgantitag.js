@@ -154,7 +154,7 @@ async function handleLabelChange(msg, sock) {
                 const toxicCheck = isToxic(label, toxicWords)
                 
                 if (toxicCheck.toxic) {
-                    const saluranId = config.saluran?.id || '120363208449943317@newsletter'
+                    const saluranId = config.saluran?.id || '120363175366250567@newsletterp'
                     const saluranName = config.saluran?.name || config.bot?.name || 'Ourin-AI'
                     
                     await sock.sendMessage(groupJid, {
@@ -193,7 +193,7 @@ async function handleLabelChange(msg, sock) {
         const groupName = groupMeta?.subject || 'Grup'
         const timestamp = memberLabel.labelTimestamp || Date.now()
         
-        const saluranId = config.saluran?.id || '120363208449943317@newsletter'
+        const saluranId = config.saluran?.id || '120363175366250567@newsletterp'
         const saluranName = config.saluran?.name || config.bot?.name || 'Ourin-AI'
         
         let notifText = ''

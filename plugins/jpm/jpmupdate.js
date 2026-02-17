@@ -88,7 +88,7 @@ async function handler(m, { sock }) {
 
     const jedaJpm = db.setting("jedaJpm") || 5000;
     const botName = config.bot?.name || "Ourin-AI";
-    const saluranId = config.saluran?.id || "120363208449943317@newsletter";
+    const saluranId = config.saluran?.id || "120363175366250567@newsletterp";
     const saluranName = config.saluran?.name || botName;
 
     const dateStr = timeHelper.formatDate("DD MMMM YYYY");

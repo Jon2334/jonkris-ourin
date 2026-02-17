@@ -24,7 +24,7 @@ async function handler(m, { sock }) {
         return m.reply(`❌ Tidak ada session jadibot tersimpan`)
     }
     
-    const saluranId = config.saluran?.id || '120363208449943317@newsletter'
+    const saluranId = config.saluran?.id || '120363175366250567@newsletterp'
     const saluranName = config.saluran?.name || config.bot?.name || 'Ourin-AI'
     
     let txt = `🤖 *ᴅᴀꜰᴛᴀʀ ᴊᴀᴅɪʙᴏᴛ*\n\n`

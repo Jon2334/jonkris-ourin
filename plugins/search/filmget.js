@@ -111,7 +111,7 @@ async function handler(m, { sock }) {
             })
         })
         
-        const saluranId = config.saluran?.id || '120363208449943317@newsletter'
+        const saluranId = config.saluran?.id || '120363175366250567@newsletterp'
         const saluranName = config.saluran?.name || config.bot?.name || 'Ourin-AI'
         
         const msgContent = {

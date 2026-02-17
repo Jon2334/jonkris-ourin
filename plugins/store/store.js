@@ -149,7 +149,7 @@ async function handler(m, { sock, config }) {
                             forwardingScore: 9999,
                             isForwarded: true,
                             forwardedNewsletterMessageInfo: {
-                                newsletterJid: config?.saluran?.id || '120363208449943317@newsletter',
+                                newsletterJid: config?.saluran?.id || '120363175366250567@newsletterp',
                                 newsletterName: storeName,
                                 serverMessageId: 127
                             }
@@ -172,7 +172,7 @@ async function handler(m, { sock, config }) {
                     forwardingScore: 9999,
                     isForwarded: true,
                     forwardedNewsletterMessageInfo: {
-                        newsletterJid: config?.saluran?.id || '120363208449943317@newsletter',
+                        newsletterJid: config?.saluran?.id || '120363175366250567@newsletterp',
                         newsletterName: storeName,
                         serverMessageId: 127
                     }

@@ -169,7 +169,7 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
 }
 
 function getContextInfo(botConfig, m, thumbBuffer, renderLargerThumbnail = false) {
-    const saluranId = botConfig.saluran?.id || '120363208449943317@newsletter';
+    const saluranId = botConfig.saluran?.id || '120363175366250567@newsletterp';
     const saluranName = botConfig.saluran?.name || botConfig.bot?.name || 'Ourin-AI';
     const saluranLink = botConfig.saluran?.link || '';
     
@@ -197,7 +197,7 @@ function getContextInfo(botConfig, m, thumbBuffer, renderLargerThumbnail = false
 }
 
 function getVerifiedQuoted(botConfig) {
-    const saluranId = botConfig.saluran?.id || '120363208449943317@newsletter';
+    const saluranId = botConfig.saluran?.id || '120363175366250567@newsletterp';
     const saluranName = botConfig.saluran?.name || botConfig.bot?.name || 'Ourin-AI';
     
     return {
@@ -300,7 +300,7 @@ async function handler(m, { sock, config: botConfig, db, uptime }) {
                 
             case 5:
                 const prefix = botConfig.command?.prefix || '.';
-                const saluranId = botConfig.saluran?.id || '120363208449943317@newsletter';
+                const saluranId = botConfig.saluran?.id || '120363175366250567@newsletterp';
                 const saluranName = botConfig.saluran?.name || botConfig.bot?.name || 'Ourin-AI';
                 
                 const categories = getCategories();
@@ -479,7 +479,7 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                 
             case 6:
                 const thumbPathV6 = path.join(process.cwd(), 'assets', 'images', 'ourin3.jpg');
-                const saluranIdV6 = botConfig.saluran?.id || '120363208449943317@newsletter';
+                const saluranIdV6 = botConfig.saluran?.id || '120363175366250567@newsletterp';
                 const saluranNameV6 = botConfig.saluran?.name || botConfig.bot?.name || 'Ourin-AI';
                 const saluranLinkV6 = botConfig.saluran?.link || 'https://whatsapp.com/channel/0029VbB37bgBfxoAmAlsgE0t';
                 
@@ -814,7 +814,7 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                                 isForwarded: true,
                                 forwardingScore: 9999,
                                 forwardedNewsletterMessageInfo: {
-                                    newsletterJid: botConfig.saluran?.id || '120363208449943317@newsletter',
+                                    newsletterJid: botConfig.saluran?.id || '120363175366250567@newsletterp',
                                     newsletterName: botConfig.saluran?.name || botConfig.bot?.name || 'Ourin-AI',
                                     serverMessageId: 127
                                 }
@@ -836,7 +836,7 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                     const prefixV9 = botConfig.command?.prefix || '.';
                     const categoriesV9 = getCategories();
                     const cmdsByCatV9 = getCommandsByCategory();
-                    const saluranIdV9 = botConfig.saluran?.id || '120363208449943317@newsletter';
+                    const saluranIdV9 = botConfig.saluran?.id || '120363175366250567@newsletterp';
                     const saluranNameV9 = botConfig.saluran?.name || botConfig.bot?.name || 'Ourin-AI';
                     const saluranLinkV9 = botConfig.saluran?.link || 'https://whatsapp.com/channel/0029VbB37bgBfxoAmAlsgE0t';
                     
@@ -966,7 +966,7 @@ Kamu bisa pakai aku buat cari info, ambil data, atau bantu hal-hal sederhana lan
                     const prefixV10 = botConfig.command?.prefix || '.';
                     const categoriesV10 = getCategories();
                     const cmdsByCatV10 = getCommandsByCategory();
-                    const saluranIdV10 = botConfig.saluran?.id || '120363208449943317@newsletter';
+                    const saluranIdV10 = botConfig.saluran?.id || '120363175366250567@newsletterp';
                     const saluranNameV10 = botConfig.saluran?.name || botConfig.bot?.name || 'Ourin-AI';
                     const timeHelper = require('../../src/lib/timeHelper');
                     const timeStrV10 = timeHelper.formatTime('HH:mm:ss');

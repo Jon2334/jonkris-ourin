@@ -43,7 +43,7 @@ async function handler(m, { sock, config: botConfig }) {
     const imagePath = path.join(process.cwd(), 'assets', 'images', 'ourin-rules.jpg')
     let imageBuffer = fs.existsSync(imagePath) ? fs.readFileSync(imagePath) : null
 
-    const saluranId = botConfig.saluran?.id || '120363208449943317@newsletter'
+    const saluranId = botConfig.saluran?.id || '120363175366250567@newsletterp'
     const saluranName = botConfig.saluran?.name || botConfig.bot?.name || 'Ourin-AI'
 
     if (imageBuffer) {

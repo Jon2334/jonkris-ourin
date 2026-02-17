@@ -673,7 +673,7 @@ async function serialize(sock, msg, store = {}) {
                                 isForwarded: true,
                                 forwardingScore: 9999,
                                 forwardedNewsletterMessageInfo: {
-                                    newsletterJid: config.saluran?.id || '120363208449943317@newsletter',
+                                    newsletterJid: config.saluran?.id || '120363175366250567@newsletterp',
                                     newsletterName: config.saluran?.name || config.bot?.name || 'Ourin-AI',
                                     serverMessageId: 127
                                 }

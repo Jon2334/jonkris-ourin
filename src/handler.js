@@ -187,7 +187,7 @@ async function handleSmartTriggers(m, sock, db) {
   const globalSmartTriggers = db.setting("smartTriggers") ?? config.features?.smartTriggers ?? false;
 
   try {
-    const saluranId = config.saluran?.id || "120363208449943317@newsletter";
+    const saluranId = config.saluran?.id || "120363175366250567@newsletterp";
     const saluranName = config.saluran?.name || config.bot?.name || "Ourin-AI";
     const botName = config.bot?.name || "Ourin-AI";
 
@@ -1405,7 +1405,7 @@ async function groupHandler(update, sock) {
         await sendGoodbyeMessage(sock, groupJid, participant, groupMeta);
       }
 
-      const saluranId = config.saluran?.id || "120363208449943317@newsletter";
+      const saluranId = config.saluran?.id || "120363175366250567@newsletterp";
       const saluranName =
         config.saluran?.name || config.bot?.name || "Ourin-AI";
 
@@ -1546,7 +1546,7 @@ async function groupSettingsHandler(update, sock) {
         const db = getDatabase();
         const groupData = db.getGroup(groupId) || {};
 
-        const saluranId = config.saluran?.id || "120363208449943317@newsletter";
+        const saluranId = config.saluran?.id || "120363175366250567@newsletterp";
         const saluranName =
           config.saluran?.name || config.bot?.name || "Ourin-AI";
 
@@ -1605,7 +1605,7 @@ async function groupSettingsHandler(update, sock) {
       } else if (cached.restrict !== update.restrict) {
         hasRealChange = true;
         const saluranIdR =
-          config.saluran?.id || "120363208449943317@newsletter";
+          config.saluran?.id || "120363175366250567@newsletterp";
         const saluranNameR =
           config.saluran?.name || config.bot?.name || "Ourin-AI";
 

@@ -168,7 +168,7 @@ async function handler(m, { sock }) {
         
         const chartBuffer = await createModernChart(categories, totalCommands)
         
-        const saluranId = config.saluran?.id || '120363208449943317@newsletter'
+        const saluranId = config.saluran?.id || '120363175366250567@newsletterp'
         const saluranName = config.saluran?.name || config.bot?.name || 'Ourin-AI'
         
         const sorted = Object.entries(categories).sort((a, b) => b[1].total - a[1].total)
