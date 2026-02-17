@@ -62,7 +62,7 @@ const config = {
     },
 
     limits: {
-        default: 25,                      // User biasa
+        default: -1,                      // User biasa
         premium: 100,                     // Premium user
         owner: -1                         // Owner (-1 = unlimited)
     },
